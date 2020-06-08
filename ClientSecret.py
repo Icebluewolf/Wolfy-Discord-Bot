@@ -1,1 +1,1 @@
-clientSecret = "testing"
+clientSecret = "testing123"
