@@ -22,25 +22,39 @@ async def poll(message, author):
     for i in msg:
         i.strip()
 
-
     embed = discord.Embed(title=msg[1], type="rich", timestamp=datetime.datetime.utcnow(), color=0xff0000)
-    #try:
-    timeLimitimput = msg[2]
-    timeLimit = re.search("[dhms]", timeLimitimput)
-    print(timeLimit)
+    try:
+        timeLimitInput = msg[2]
+        prevTimeLimitInputPos = 0
+        for i in ["d", "h", "m", "s"]:
+            timeInputPos = re.search(i, timeLimitInput)
+            if timeInputPos != None:
+                print(timeLimitInput[prevTimeLimitInputPos:timeInputPos.span()[0]].strip())
+                if int(timeLimitInput[prevTimeLimitInputPos:timeInputPos.span()[0]].strip()):
+                    if i == "d":
+                        days = timeLimitInput[prevTimeLimitInputPos:timeInputPos.span()[0]]
+                    elif i == "h":
+                        hours = timeLimitInput[prevTimeLimitInputPos:timeInputPos.span()[0]]
+                    elif i == "m":
+                        minutes = timeLimitInput[prevTimeLimitInputPos:timeInputPos.span()[0]]
+                    elif i == "s":
+                        timeSeconds = timeLimitInput[prevTimeLimitInputPos:timeInputPos.span()[0]]
 
-    count = 0
-    for i in [days, hours, minutes, timeSeconds]:
-        try:
-            if timeLimit[count].isnumeric():
-                i = timeLimit[count]
-        except IndexError:
-            i = 0
+                prevTimeLimitInputPos = timeInputPos.span()[0] + 1
 
+            else:
+                if i == "d":
+                    days = 0
+                elif i == "h":
+                    hours = 0
+                elif i == "m":
+                    minutes = 0
+                elif i == "s":
+                    timeSeconds = 0
 
-    #except:
-        #await message.channel.send("Please Enter A Number In The 3rd Position")
-        #return
+    except:
+        await message.channel.send("Please Enter A Time In Numbers In The 3rd Position\nEx: 3d12h30m30s  Meaning 3 Days 12 Hours 30 Minutes And 30 Seconds")
+        return
 
     options = ''
     count = 0
@@ -56,7 +70,7 @@ async def poll(message, author):
         await message.add_reaction(emojis[i])
     messageId = message.id
 
-    endTime = datetime.datetime.now() + datetime.timedelta(days=float(days), hours=float(hours), minutes=float(minutes), seconds=float(timeSeconds))
+    endTime = datetime.datetime.now() + datetime.timedelta(days=int(days), hours=int(hours), minutes=int(minutes), seconds=int(timeSeconds))
     seconds = endTime - datetime.datetime.now()
     await asyncio.sleep(seconds.total_seconds())
     message = await message.channel.fetch_message(messageId)
