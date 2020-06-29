@@ -26,9 +26,9 @@ async def on_message(message):
     if message.content.startswith("warf"):
         await message.channel.send("warf")
 
-@client.event
-async def on_reaction_add(reaction, user):
-    if str(user) == "Ice Wolfy#5283":
-        await reaction.message.channel.send("{} has added {} to the message: {}".format(user.name, reaction.emoji, reaction.message.content))
+#@client.event
+#async def on_reaction_add(reaction, user):
+    #if str(user) == "Ice Wolfy#5283":
+        #await reaction.message.channel.send("{} has added {} to the message: {}".format(user.name, reaction.emoji, reaction.message.content))
 
 client.run(ClientSecret.clientSecret)

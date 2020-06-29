@@ -17,6 +17,7 @@ timeSeconds = 0
 
 
 async def poll(message, author):
+    await message.delete()
     global seconds
     msg = message.content.split(',')
     for i in msg:
@@ -29,7 +30,6 @@ async def poll(message, author):
         for i in ["d", "h", "m", "s"]:
             timeInputPos = re.search(i, timeLimitInput)
             if timeInputPos != None:
-                print(timeLimitInput[prevTimeLimitInputPos:timeInputPos.span()[0]].strip())
                 if int(timeLimitInput[prevTimeLimitInputPos:timeInputPos.span()[0]].strip()):
                     if i == "d":
                         days = timeLimitInput[prevTimeLimitInputPos:timeInputPos.span()[0]]
@@ -61,6 +61,9 @@ async def poll(message, author):
     del msg[0]
     del msg[0]
     del msg[0]
+    if len(msg) > 20 or len(msg) < 1:
+        await message.channel.send("You Must Have 1-20 Options")
+        return
     for i in msg:
         options = options + emojis[count] + "    " + i + "\n"
         count += 1
@@ -75,10 +78,21 @@ async def poll(message, author):
     await asyncio.sleep(seconds.total_seconds())
     message = await message.channel.fetch_message(messageId)
     winingNumber = 0
+    winner = []
     for i in message.reactions:
-        if i.count > winingNumber:
+        if i.count == winingNumber:
             winingNumber = i.count
-            winner = i
-    await message.channel.send("The Wining Choice Was " + str(winner))
+            winner.append(i)
+        elif i.count > winingNumber:
+            winingNumber = i.count
+            winner.clear()
+            winner.append(i)
+    if len(winner) > 1:
+        resultmessage = "There was a tie between"
+        for i in range(len(winner)):
+            resultmessage = resultmessage + " - " + str(winner[i])
+        await message.channel.send(resultmessage)
+    else:
+        await message.channel.send("The wining choice was " + str(winner[0]))
 
 
