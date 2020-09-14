@@ -35,3 +35,5 @@ wpoll Is The Activation For The Command. The Title is The Title Of Your Poll. Th
 
 ## Announcements
 This Is Still Being Worked On And More Info Will Come Out In The Future.
+
+## Lottery Bot O.o
