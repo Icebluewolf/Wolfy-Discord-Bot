@@ -16,16 +16,15 @@ minutes = 0
 timeSeconds = 0
 
 
-async def poll(message, author):
-    await message.delete()
+async def poll(ctx, content: str):
+    ctx.message.delete
     global seconds
-    msg = message.content.split(',')
-    for i in msg:
-        i.strip()
+    msg = content.split(",")
+    for field in msg:
+        field.strip()
 
-    embed = discord.Embed(title=msg[1], type="rich", timestamp=datetime.datetime.utcnow(), color=0xff0000)
     try:
-        timeLimitInput = msg[2]
+        timeLimitInput = msg[1]
         prevTimeLimitInputPos = 0
         for i in ["d", "h", "m", "s"]:
             timeInputPos = re.search(i, timeLimitInput)
@@ -53,33 +52,42 @@ async def poll(message, author):
                     timeSeconds = 0
 
     except:
-        await message.channel.send("Please Enter A Time In Numbers In The 3rd Position\nEx: 3d12h30m30s  Meaning 3 Days 12 Hours 30 Minutes And 30 Seconds")
+        await ctx.channel.send("Please Enter A Time In Numbers In The 3rd Position\n"
+                               "Ex: 3d12h30m30s  Meaning 3 Days 12 Hours 30 Minutes And 30 Seconds")
         return
+
+    embed = discord.Embed(title=msg[0],
+                          type="rich",
+                          color=0xff0000,
+                          timestamp=(datetime.timedelta(days=int(days),
+                                                        hours=int(hours),
+                                                        minutes=int(minutes),
+                                                        seconds=int(timeSeconds)) + datetime.datetime.now()))
+    embed.set_footer(text="Ends")
 
     options = ''
     count = 0
     del msg[0]
     del msg[0]
-    del msg[0]
     if len(msg) > 20 or len(msg) < 1:
-        await message.channel.send("You Must Have 1-20 Options")
+        await ctx.channel.send("You Must Have 1-20 Options")
         return
     for i in msg:
         options = options + emojis[count] + "    " + i + "\n"
         count += 1
     embed.add_field(name="Options", value=options, inline=False)
-    message = await message.channel.send(embed=embed)
+    ctx = await ctx.channel.send(embed=embed)
     for i in range(len(msg)):
-        await message.add_reaction(emojis[i])
-    messageId = message.id
+        await ctx.add_reaction(emojis[i])
+    messageId = ctx.id
 
     endTime = datetime.datetime.now() + datetime.timedelta(days=int(days), hours=int(hours), minutes=int(minutes), seconds=int(timeSeconds))
     seconds = endTime - datetime.datetime.now()
     await asyncio.sleep(seconds.total_seconds())
-    message = await message.channel.fetch_message(messageId)
+    ctx = await ctx.channel.fetch_message(messageId)
     winingNumber = 0
     winner = []
-    for i in message.reactions:
+    for i in ctx.reactions:
         if i.count == winingNumber:
             winingNumber = i.count
             winner.append(i)
@@ -91,8 +99,8 @@ async def poll(message, author):
         resultmessage = "There was a tie between"
         for i in range(len(winner)):
             resultmessage = resultmessage + " - " + str(winner[i])
-        await message.channel.send(resultmessage)
+        await ctx.channel.send(resultmessage)
     else:
-        await message.channel.send("The wining choice was " + str(winner[0]))
+        await ctx.channel.send("The wining choice was " + str(winner[0]))
 
 
