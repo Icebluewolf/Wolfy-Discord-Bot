@@ -1,4 +1,3 @@
 import random
-
-await def lotteryPick(guild):
+async def lotteryPick(guild):
     return(random.choice(guild.members))
