@@ -62,7 +62,27 @@ async def whitelist_error(ctx, error):
     if isinstance(error, commands.MissingRequiredArgument):
         await ctx.send("Put Your MC Username After The Command To Whitelist Yourself On The MC Server")
 
-# async def on_message(message):
+msgList = [
+    ["werf","werf"],
+    ["warf","warf"],
+    ["O.o","<:SusOwl:715254309079613543>"],
+    ["o.O","WRONG WAY!"],
+]
+        
+async def on_message(message):
+    #Don't check your own hehe
+    if message.author == discordClient.user:
+        return
+    
+    #Do the poll
+    if message.content.startswith("wpoll"):
+        await poll.poll(message, message.author)
+        
+    #Do simple throw back messsages
+    for msgInfo in msgList:
+        if msgInfo[0] == message:
+            await message.channel.send(msgInfo[1])
+            return
 #     if message.author == discordClient.user:
 #         return
 #     if message.content.startswith("wpoll"):
