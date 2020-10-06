@@ -1,3 +1,3 @@
 import random
-discord_user=["Aru", "Reed", "Max", "Scott", "David", "Jack", "Caleb"]
-random.choice(discord_user)
+async def lotteryPick(guild):
+    return(random.choice(guild.members))
