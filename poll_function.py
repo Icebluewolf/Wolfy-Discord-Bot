@@ -2,6 +2,8 @@ import discord
 import datetime
 import asyncio
 import re
+from discord.ext import commands
+from config import discordClient
 
 client = discord.Client()
 
@@ -16,7 +18,11 @@ minutes = 0
 timeSeconds = 0
 
 
-async def poll(ctx, content: str):
+@discordClient.command()
+async def poll(ctx, *, content):
+    """
+    Makes A Poll That Users Can Vote On.
+    """
     ctx.message.delete
     global seconds
     msg = content.split(",")
