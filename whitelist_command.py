@@ -24,7 +24,7 @@ async def whitelist(ctx, *, content):
             "INSERT INTO used_command (discord_user, user_id, whitelist) "
             "VALUES ('{}', {}, True);".format(ctx.author.name + "#" + ctx.author.discriminator, ctx.author.id))
         DB_conn.commit()
-        # MCClient.client.send_console_command(srv_id, "whitelist add " + content)
+        MCClient.client.send_console_command(srv_id, "whitelist add " + content)
         await ctx.send("The User {} Has Been Added To The Whitelist".format(content))
 
 
