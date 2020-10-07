@@ -1,6 +1,6 @@
 import discord
 from config import discordClient
-import ClientSecret
+import private
 
 
 @discordClient.event
