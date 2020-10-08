@@ -11,7 +11,7 @@ async def whitelist(ctx, *, content):
     if content.strip == "":
         print("cancelled")
         return
-    cur.execute("select count(*) from used_command where user_id = %s", (str(ctx.author.id),))
+    cur.execute("select count(*) from user_data where discord_user_id = %s", (str(ctx.author.id),))
     is_present = cur.fetchone()[0]
     print(is_present)
     print(ctx.author.id)
@@ -21,8 +21,9 @@ async def whitelist(ctx, *, content):
         return
     else:
         cur.execute(
-            "INSERT INTO used_command (discord_user, user_id, whitelist) "
-            "VALUES ('{}', {}, True);".format(ctx.author.name + "#" + ctx.author.discriminator, ctx.author.id))
+            "UPDATE user_data"
+            "SET whitelist=True"
+            "WHERE discord_user_id={}".format(ctx.author.id))
         DB_conn.commit()
         MCClient.client.send_console_command(srv_id, "whitelist add " + content)
         await ctx.send("The User {} Has Been Added To The Whitelist".format(content))
