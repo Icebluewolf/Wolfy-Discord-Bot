@@ -6,22 +6,23 @@ import whitelist_command, poll_function, per_guild_config, lottery
 
 @discordClient.event
 async def on_ready():
-  # Prints Console Message When Bot Has Finished Turning On.
-  print("READY!")
+    # Prints Console Message When Bot Has Finished Turning On.
+    print("READY!")
 
 
 @discordClient.command()
 async def ping(ctx):
-  """
-  Pings The Bots Server
-  """
+    # Simple Command That Sends The Bots Ping/Latency
+    """
+    Pings The Bots Server
+    """
 
-  await ctx.send("Pong :ping_pong:\n`Ping : " + str(discordClient.latency) + "`")
+    await ctx.send("Pong :ping_pong:\n`Ping : " + str(discordClient.latency) + "`")
 
 
 @discordClient.event
 async def on_guild_join(guild):
-    """Sets up the guilds Database Entry When The Bot Joins A Guild"""
+    # Sets up the guilds Database Entry When The Bot Joins A Guild
     guild = str(guild.id)
     cur.execute(
         'INSERT INTO guild_settings (bypass_roles_id, lottery, poll, whitelist, lottery_access_roles_id, '
@@ -33,11 +34,9 @@ async def on_guild_join(guild):
 
 @discordClient.event
 async def on_member_join(member):
-    """
-    Sets Up The Users Database User Info
-    """
-    cursor = cur.execute("SELECT * FROM user_data WHERE discord_user_id=%s AND guild_id=%s",
-                         (str(member.id), str(member.guild.id)))
+    # Sets Up The Users Database User Info When A User Join A Server
+    cur.execute("SELECT * FROM user_data WHERE discord_user_id=%s AND guild_id=%s",
+                (str(member.id), str(member.guild.id)))
     row = cur.fetchall()
     print(row)
     if row:
@@ -51,6 +50,7 @@ async def on_member_join(member):
         DB_conn.commit()
 
 
+# Simple Call And Response
 msgList = [
   ["werf", "werf"],
   ["warf", "warf"],
@@ -70,4 +70,5 @@ async def on_message(message):
             await message.channel.send(msgInfo[1])
             return
 
+# Run The Bot
 discordClient.run(private.clientSecret)
