@@ -1,13 +1,24 @@
 import discord
+import os
 from config import discordClient, cur, DB_conn
 import private
-import whitelist_command, poll_function, per_guild_config, lottery
 
 
 @discordClient.event
 async def on_ready():
     # Prints Console Message When Bot Has Finished Turning On.
     print("READY!")
+    await discordClient.change_presence(status=discord.Status.online, activity=discord.Game("In The Snow"))
+
+
+@discordClient.command()
+async def load(ctx, extension):
+    discordClient.load_extension(f"cogs.{extension}")
+
+
+@discordClient.command()
+async def unload(ctx, extension):
+    discordClient.unload_extension(f"cogs.{extension}")
 
 
 @discordClient.command()
@@ -70,5 +81,9 @@ async def on_message(message):
             await message.channel.send(msgInfo[1])
             return
 
-# Run The Bot
+# Run The Bot And Load Cogs
+for filename in os.listdir("./cogs"):
+    if filename.endswith(".py"):
+        discordClient.load_extension(f"cogs.{filename[:-3]}")
+
 discordClient.run(private.clientSecret)
