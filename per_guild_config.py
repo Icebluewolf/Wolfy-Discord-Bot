@@ -54,15 +54,15 @@ async def settings(ctx, setting=None):
         else:
             await ctx.send("Success! The Roles Were Added", delete_after=30)
 
-# Command Code Starts Here #
-    # Deletes Invocation Message #
+    # Command Code Starts Here
+    # Deletes Invocation Message
     await ctx.message.delete()
 
     cur.execute("select count(*) from guild_settings where guild_id = %s", (str(ctx.guild.id),))
     guild_settings = cur.fetchone()[0]
     print(guild_settings)
 
-    # Checks If There Was A Specified Setting To Start On #
+    # Checks If There Was A Specified Setting To Start On
     if setting:
         setting_input = setting
     else:
@@ -89,11 +89,11 @@ async def settings(ctx, setting=None):
                 await modify_database(ctx.guild.id, "lottery", "True")
 
         elif setting == "roles":
-            setting = await get_setting(ctx, "**Type The Role Names You Want To Let Use The Lottery.(Separate with `,`)"
-                                             " Leave Blank For Everyone.**")
+            setting = await get_setting(ctx, "**Type The Role Names(Not Ping) You Want To Let Use The Lottery."
+                                             "(Separate with `,`) Leave Blank For Everyone.**")
             await get_roles(ctx, setting, "lottery_access_roles_id")
 
-    if setting_input == "poll":
+    elif setting_input == "poll":
         setting = await get_setting(ctx, f"**Poll**\n"
                                          f"Module : {module_list[1][1]}\n"
                                          f"Roles  : {module_list[1][1]}\n"
@@ -110,7 +110,7 @@ async def settings(ctx, setting=None):
                                              " Leave Blank For Everyone.**")
             await get_roles(ctx, setting, "poll_access_roles_id")
 
-    if setting_input == "whitelist":
+    elif setting_input == "whitelist":
         setting = await get_setting(ctx, f"**Whitelist**\n"
                                          f"Module : {module_list[2][1]}\n"
                                          f"Roles  : {module_list[2][1]}\n"
