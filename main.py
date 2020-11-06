@@ -2,6 +2,7 @@ import discord
 import os
 from config import discordClient, cur, DB_conn
 import private
+from discord.ext import commands
 
 
 @discordClient.event
@@ -12,11 +13,13 @@ async def on_ready():
 
 
 @discordClient.command()
+@commands.is_owner()
 async def load(ctx, extension):
     discordClient.load_extension(f"cogs.{extension}")
 
 
 @discordClient.command()
+@commands.is_owner()
 async def unload(ctx, extension):
     discordClient.unload_extension(f"cogs.{extension}")
 
