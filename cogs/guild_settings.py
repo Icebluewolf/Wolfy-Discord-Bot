@@ -11,7 +11,7 @@ for i in module_list:
 
 class GuildSettings(commands.Cog):
 
-    @discordClient.command()
+    @commands.command()
     @commands.has_permissions(administrator=True)
     async def settings(self, ctx, setting=None):
         """
@@ -63,7 +63,6 @@ class GuildSettings(commands.Cog):
 
         cur.execute("select count(*) from guild_settings where guild_id = %s", (str(ctx.guild.id),))
         guild_settings = cur.fetchone()[0]
-        print(guild_settings)
 
         # Checks If There Was A Specified Setting To Start On
         if setting:

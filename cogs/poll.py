@@ -2,8 +2,9 @@ import discord
 import datetime
 import asyncio
 import re
+import custom_checks
 from discord.ext import commands
-from config import discordClient
+from config import discordClient, DB_conn, cur
 
 client = discord.Client()
 
@@ -20,10 +21,8 @@ timeSeconds = 0
 
 class Poll(commands.Cog):
 
-    # async def get_allowed_roles(ctx):
-
     @commands.command()
-    # @commands.has_role(await get_allowed_roles())
+    @custom_checks.allowed_roles("lottery_access_roles_id")
     async def poll(self, ctx, *, content):
         """
         Makes A Poll That Users Can Vote On.
@@ -116,6 +115,13 @@ class Poll(commands.Cog):
             await ctx.channel.send(resultmessage)
         else:
             await ctx.channel.send("The wining choice was " + str(winner[0]))
+
+    @poll.error
+    async def whitelist_error(self, ctx, error):
+        print(f"Poll Error: {error}")
+        await ctx.message.delete()
+        if isinstance(error, commands.CheckFailure):
+            await ctx.send("You Do Not Have Permission To Preform That Command")
 
 
 def setup(client):
