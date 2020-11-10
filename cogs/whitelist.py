@@ -13,19 +13,6 @@ class Whitelist(commands.Cog):
         self.title = ""
         self.color = 0
 
-    def create_embed(self, title, description, color=0):
-        if title == "error":
-            self.title = "There Was An Error :/"
-            color = 0xE90000
-        elif title == "fail":
-            self.title = "You Cant Do That :("
-            color = 0xF0FF00
-        embed = discord.Embed(title=title,
-                              description=description,
-                              type="rich",
-                              color=color, )
-        return embed
-
     @commands.command()
     @custom_checks.allowed_roles("whitelist_access_roles_id")
     async def whitelist(self, ctx, *, content):
@@ -44,10 +31,11 @@ class Whitelist(commands.Cog):
             await global_functions.add_user_db_row(ctx.author)
         # Check If They Have Already Used The Command Or The User Is Not A Bot Admin
         if is_present is False and ctx.author.id != 451848182327148554:
-            await ctx.send(embed=self.create_embed(title="fail",
-                                                   description="You Already Have An Account Whitelisted\n"
-                                                   "If You Changed Your Account Name Or Got A New "
-                                                   "Account Please Contact A Staff Member.", ),
+            await ctx.send(embed=await global_functions.create_embed(title="fail",
+                                                                     description=
+                                                                     "You Already Have An Account Whitelisted\n"
+                                                                     "If You Changed Your Account Name Or Got A New "
+                                                                     "Account Please Contact A Staff Member.",),
                            delete_after=30)
             return
         # Else Add Them To The Whitelist And Update Database
@@ -57,9 +45,10 @@ class Whitelist(commands.Cog):
             cur.execute(sql, (user_id,))
             DB_conn.commit()
             MCClient.client.send_console_command(srv_id, "whitelist add " + content)
-            await ctx.send(embed=self.create_embed(title="Success",
-                                                   description="Minecraft User {} Has Been Added To The"
-                                                   " Whitelist".format(content)),
+            await ctx.send(embed=await global_functions.create_embed(title="Success",
+                                                                     description=
+                                                                     "Minecraft User {} Has Been Added To The"
+                                                                     " Whitelist".format(content)),
                            delete_after=30)
 
     @whitelist.error
@@ -68,14 +57,17 @@ class Whitelist(commands.Cog):
         await ctx.message.delete()
         if isinstance(error, commands.MissingRequiredArgument):
             # If The User Did Not Specify An Argument
-            await ctx.send(embed=self.create_embed(title="error",
-                                                   description="Put Your MC Username After The Command To Whitelist"
-                                                               " Yourself On The MC Server"),
+            await ctx.send(embed=await global_functions.create_embed(title="error",
+                                                                     description=
+                                                                     "Put Your MC Username After The Command To"
+                                                                     " Whitelist Yourself On The MC Server"),
                            delete_after=15)
         elif isinstance(error, commands.CheckFailure):
             # If The User Dose Not Have The Required Roles To Use The Command
-            await ctx.send(embed=self.create_embed(title="fail", description="You Must Be Level 10 To Access"
-                                                                             " This Command"),
+            await ctx.send(embed=await global_functions.create_embed(title="fail",
+                                                                     description=
+                                                                     "You Must Be Level 10 To Access"
+                                                                     " This Command"),
                            delete_after=15)
 
 
