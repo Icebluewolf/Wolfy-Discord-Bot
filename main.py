@@ -30,6 +30,7 @@ def main_code():
         Pings The Bots Server
         """
 
+        await ctx.delete()
         await ctx.send(embed=await global_functions.create_embed(title="",
                                                                  description=
                                                                  f"Pong :ping_pong:\nPing : `{discordClient.latency}`"),

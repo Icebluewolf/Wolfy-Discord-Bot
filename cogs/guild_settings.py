@@ -14,7 +14,7 @@ class GuildSettings(commands.Cog):
 
     @commands.command()
     @commands.has_permissions(administrator=True)
-    async def settings(self, ctx, setting=None):
+    async def settings(self, ctx, *, setting=None):
         """
         Allows Server Admins To Change How Functions Of The Bot Work
         Usage: w!settings [setting] [option]
@@ -53,7 +53,10 @@ class GuildSettings(commands.Cog):
             for response in setting:
                 response = response.strip()
                 for role in ctx.guild.roles:
-                    if response == role.name:
+                    if response == "everyone":
+                        verified_roles.append(ctx.guild.roles[0].id)
+                        break
+                    elif response == role.name.lower():
                         verified_roles.append(role.id)
                         break
                 else:
@@ -82,10 +85,13 @@ class GuildSettings(commands.Cog):
                     "from guild_settings where guild_id = %s", (str(ctx.guild.id),))
         row = cur.fetchall()[0]
 
-
         # Checks If There Was A Specified Setting To Start On
+        setting_input_1 = ""
         if setting:
-            setting_input = setting
+            setting = setting.split(" ")
+            setting_input_0 = setting[0]
+            if len(setting) >= 2:
+                setting_input_1 = setting[1]
         else:
             await ctx.send(embed=await global_functions.create_embed(title="",
                                                                      description=
@@ -93,69 +99,77 @@ class GuildSettings(commands.Cog):
                                                                      "Want To Change**\n"
                                                                      "Lottery\n"
                                                                      "Poll\n"
-                                                                     "Whitelist\n"),
+                                                                     "Whitelist\n"
+                                                                     "Bypass NOTE: These Roles Bypass All Permissions"),
                            delete_after=30)
 
             try:
-                setting_input = await discordClient.wait_for("message", timeout=30, check=check)
-                await setting_input.delete()
-                setting_input = setting_input.content
+                setting_input_0 = await discordClient.wait_for("message", timeout=30, check=check)
+                await setting_input_0.delete()
+                setting_input_0 = setting_input_0.content
             except asyncio.TimeoutError:
                 await ctx.message.delete()
                 return
 
-        if setting_input == "lottery":
-            setting = await get_setting(ctx, f"**Lottery**\n"
-                                        f"Module : {module_list[0][1]}\n"
-                                        f"Roles  : {await get_role_name(row[1])}\n"
-                                        f"**Type The Setting You Want To Change**")
-            if setting == "module":
-                setting = await get_setting(ctx, "**Would You Like To Turn This Module On Or Off**")
-                if setting == "off":
-                    await modify_database(ctx.guild.id, "lottery", "False")
-                elif setting_input == "on":
-                    await modify_database(ctx.guild.id, "lottery", "True")
+        if setting_input_0 == "lottery":
+            if not setting_input_1:
+                setting_input_1 = await get_setting(ctx, f"**Lottery**\n"
+                                            f"Roles  : {await get_role_name(row[1])}\n"
+                                            f"**Type The Setting You Want To Change**")
 
-            elif setting == "roles":
+            if setting_input_1 == "roles":
                 setting = await get_setting(ctx, "**Type The Role Names(Not Ping) You Want To Let Use The Lottery."
-                                                 "(Separate with `,`) Leave Blank For Everyone.**")
+                                                 "(Separate with `,`) Type \"everyone\" For Everyone.**")
                 await get_roles(ctx, setting, "lottery_access_roles_id")
 
-        elif setting_input == "poll":
-            setting = await get_setting(ctx, f"**Poll**\n"
-                                        f"Module : {module_list[1][1]}\n"
-                                        f"Roles  : {await get_role_name(row[2])}\n"
-                                        f"**Type The Setting You Want To Change**")
-            if setting == "module":
-                setting = await get_setting(ctx, "**Would You Like To Turn This Module On Or Off**")
-                if setting == "off":
-                    await modify_database(ctx.guild.id, "poll", "False")
-                elif setting_input == "on":
-                    await modify_database(ctx.guild.id, "poll", "True")
+            else:
+                await ctx.send(embed=await global_functions.create_embed(title="invalid",
+                                                             description=f"That Is Not An Option"),
+                               delete_after=30)
 
-            elif setting == "roles":
+        # Split (This Is So I Can Keep My If Statements Apart)
+
+        elif setting_input_0 == "poll":
+            if not setting_input_1:
+                setting_input_1 = await get_setting(ctx, f"**Poll**\n"
+                                            f"Roles  : {await get_role_name(row[2])}\n"
+                                            f"**Type The Setting You Want To Change**")
+
+            if setting_input_1 == "roles":
                 setting = await get_setting(ctx,
                                             "**Type The Role Names You Want To Let Use The Poll.(Separate with `,`)"
-                                            " Leave Blank For Everyone.**")
+                                            " Type \"everyone\" For Everyone.**")
                 await get_roles(ctx, setting, "poll_access_roles_id")
 
-        elif setting_input == "whitelist":
-            setting = await get_setting(ctx, f"**Whitelist**\n"
-                                        f"Module : {module_list[2][1]}\n"
-                                        f"Roles  : {await get_role_name(row[3])}\n"
-                                        f"**Type The Setting You Want To Change**")
-            if setting == "module":
-                setting = await get_setting(ctx, "**Would You Like To Turn This Module On Or Off**")
-                if setting == "off":
-                    await modify_database(ctx.guild.id, "whitelist", "False")
-                elif setting_input == "on":
-                    await modify_database(ctx.guild.id, "whitelist", "True")
+            else:
+                await ctx.send(embed=await global_functions.create_embed(title="invalid",
+                                                             description=f"That Is Not An Option"),
+                               delete_after=30)
 
-            elif setting == "roles":
+        # Split (This Is So I Can Keep My If Statements Apart)
+
+        elif setting_input_0 == "whitelist":
+            if not setting_input_1:
+                setting_input_1 = await get_setting(ctx, f"**Whitelist**\n"
+                                            f"Roles  : {await get_role_name(row[3])}\n"
+                                            f"**Type The Setting You Want To Change**")
+
+            if setting_input_1 == "roles":
                 setting = await get_setting(ctx,
                                             "**Type The Role Names You Want To Let Use The Whitelist."
-                                            "(Separate with `,`) Leave Blank For Everyone.**")
+                                            "(Separate with `,`) Type \"everyone\"k For Everyone.**")
                 await get_roles(ctx, setting, "whitelist_access_roles_id")
+
+            else:
+                await ctx.send(embed=await global_functions.create_embed(title="invalid",
+                                                             description=f"That Is Not An Option"),
+                               delete_after=30)
+
+        elif setting_input_0 == "bypass":
+            setting = await get_setting(ctx,
+                                        "**Type The Role Names You Want To Bypass ALL Permissions."
+                                        "(Separate with `,`) Type \"everyone\" For Everyone.**")
+            await get_roles(ctx, setting, "bypass_roles_id")
 
         else:
             await ctx.send(embed=await global_functions.create_embed(title="invalid",
@@ -166,7 +180,7 @@ class GuildSettings(commands.Cog):
 
     @settings.error
     async def settings_error(self, ctx, error):
-        print(error)
+        print(f"Settings Error: {error}")
         if isinstance(error, commands.CommandInvokeError):
             pass
         elif isinstance(error, commands.CheckFailure):
