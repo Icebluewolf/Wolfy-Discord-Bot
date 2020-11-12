@@ -2,6 +2,7 @@ import discord
 import datetime
 import asyncio
 import re
+import global_functions
 import custom_checks
 from discord.ext import commands
 from config import discordClient, DB_conn, cur
@@ -62,13 +63,15 @@ class Poll(commands.Cog):
                         timeSeconds = 0
 
         except:
-            await ctx.channel.send("Please Enter A Time In Numbers In The 3rd Position\n"
-                                   "Ex: 3d12h30m30s  Meaning 3 Days 12 Hours 30 Minutes And 30 Seconds")
+            await ctx.channel.send(embed=await global_functions.create_embed(title="error",
+                                                                             description=
+                                                                             "Please Enter A Time In Numbers In The 3rd Position\n"
+                                                                             "Ex: 3d12h30m30s  Meaning 3 Days 12 Hours 30 Minutes And 30 Seconds"))
             return
 
         embed = discord.Embed(title=msg[0],
                               type="rich",
-                              color=0xff0000,
+                              color=0x08D4D0,
                               timestamp=(datetime.timedelta(days=int(days),
                                                             hours=int(hours),
                                                             minutes=int(minutes),
@@ -80,7 +83,8 @@ class Poll(commands.Cog):
         del msg[0]
         del msg[0]
         if len(msg) > 20 or len(msg) < 1:
-            await ctx.channel.send("You Must Have 1-20 Options")
+            await ctx.channel.send(embed=await global_functions.create_embed(title="error",
+                                                                             description="You Must Have 1-20 Options"))
             return
         for i in msg:
             options = options + emojis[count] + "    " + i + "\n"
@@ -112,16 +116,21 @@ class Poll(commands.Cog):
             resultmessage = "There was a tie between"
             for i in range(len(winner)):
                 resultmessage = resultmessage + " - " + str(winner[i])
-            await ctx.channel.send(resultmessage)
+            await ctx.channel.send(embed=await global_functions.create_embed(title="",
+                                                                             description=resultmessage))
         else:
-            await ctx.channel.send("The wining choice was " + str(winner[0]))
+            await ctx.channel.send(embed=await global_functions.create_embed(title="",
+                                                                             description=
+                                                                             "The wining choice was " + str(winner[0])))
 
     @poll.error
     async def whitelist_error(self, ctx, error):
         print(f"Poll Error: {error}")
         await ctx.message.delete()
         if isinstance(error, commands.CheckFailure):
-            await ctx.send("You Do Not Have Permission To Preform That Command")
+            await ctx.send(embed=await global_functions.create_embed(title="fail",
+                                                                     description=
+                                                                     "You Do Not Have Permission To Preform That Command"))
 
 
 def setup(client):

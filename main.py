@@ -30,17 +30,20 @@ def main_code():
         Pings The Bots Server
         """
 
-        await ctx.send("Pong :ping_pong:\n`Ping : " + str(discordClient.latency) + "`")
+        await ctx.send(embed=await global_functions.create_embed(title="",
+                                                                 description=
+                                                                 f"Pong :ping_pong:\nPing : `{discordClient.latency}`"),
+                       delete_after=30)
 
     @discordClient.event
     async def on_guild_join(guild):
         # Sets up the guilds Database Entry When The Bot Joins A Guild
         guild = str(guild.id)
         cur.execute(
-            'INSERT INTO guild_settings (bypass_roles_id, lottery, poll, whitelist, lottery_access_roles_id, '
+            'INSERT INTO guild_settings (bypass_roles_id, lottery_access_roles_id, '
             'poll_access_roles_id, whitelist_access_roles_id, "MC_hosting_link", "MC_API_key", "MC_server_id", '
             'autorespond, guild_id) '
-            'VALUES (NULL, True, True, False, NULL, NULL, NULL, NULL, NULL, NULL, True, %s);', (guild,))
+            'VALUES (NULL, NULL, NULL, NULL, NULL, NULL, NULL, True, %s);', (guild,))
         DB_conn.commit()
 
     @discordClient.event
