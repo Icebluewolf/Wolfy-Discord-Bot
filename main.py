@@ -15,11 +15,13 @@ def main_code():
 
     @discordClient.command()
     @commands.is_owner()
+    @commands.Command(hidden=True)
     async def load(ctx, extension):
         discordClient.load_extension(f"cogs.{extension}")
 
     @discordClient.command()
     @commands.is_owner()
+    @commands.Command(hidden=True)
     async def unload(ctx, extension):
         discordClient.unload_extension(f"cogs.{extension}")
 
@@ -30,7 +32,7 @@ def main_code():
         Pings The Bots Server
         """
 
-        await ctx.delete()
+        await ctx.message.delete()
         await ctx.send(embed=await global_functions.create_embed(title="",
                                                                  description=
                                                                  f"Pong :ping_pong:\nPing : `{discordClient.latency}`"),
