@@ -13,13 +13,11 @@ def main_code():
         print("READY!")
         await discordClient.change_presence(status=discord.Status.online, activity=discord.Game("In The Snow"))
 
-    @discordClient.command()
     @commands.is_owner()
     @commands.Command(hidden=True)
     async def load(ctx, extension):
         discordClient.load_extension(f"cogs.{extension}")
 
-    @discordClient.command()
     @commands.is_owner()
     @commands.Command(hidden=True)
     async def unload(ctx, extension):
