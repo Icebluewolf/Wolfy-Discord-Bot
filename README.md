@@ -2,7 +2,7 @@
 ## Welcome To The GitHub For Wolfy Discord Bot.
 This Is A Personal Discord Bot Created With Python To Preform Some Tasks On My Discord Server.
 
-
+Version : 0.3.0
 
 ### Table Of Contents
 - [Introduction](#introduction)
@@ -17,13 +17,10 @@ This Is A Personal Discord Bot Created With Python To Preform Some Tasks On My D
 This is a Discord Bot That Has Been Created To Help Me Learn Python. This Bot Will Also Help Me With Some Tasks On My Personal Discord Server.
 The Technology I Use Is Python 3.7.
 
-I Hope To Open This Bot To Be Able To Handle Multiple Servers In The Future But For Now I Will Not Work On That.
-We are getting a bit closer to this goal.
-
 The prefix for all commands on this bot is : `w!`
 
-Please Note As Of This Point This Bot Is Not Capable Of Being On Multiple Servers So There Is Not An Invite Yet.
-Should not be much longer
+You Can Invite The Bot To Your Server With The Link Below **OR** You Can Use This Code As A Starting Template.<br>
+Invite : [Invite The Bot To Your Server](https://discord.com/api/oauth2/authorize?client_id=714954765368295486&permissions=126016&scope=bot)
 
 If You Have Any Questions Please Contact Me On Discord Or Open An Issue
 
@@ -65,12 +62,14 @@ The command for this feature is `w!whitelist IGN` With IGN being the players Min
 
 
 ## Custom Settings 
-##### (Coming Soon™)
-Are you tired of people using a command you dont want them to use. Or even Want a command turned off all together.
-This feature will allow you to lock a command to only be acceded by specific roles. 
-It will also allow you to turn off settings and set up things 
-such as connecting you Minecraft server to the whitelist command.
-The command for this feature is `w!settings` You will be prompted after this.
+Are you tired of people using a command you dont want them to use.
+This feature will allow you to lock a command to only be accessed by specific roles. 
+It will also allow you to set up items such as connection to your Minecraft server.
+This command comes with 2 options on how to run it. If you are to the command you 
+can run `w!settings` to get a step by step walkthrough of the command. 
+If you know exactly what you want to do you can run `w!settings <feature> <setting>` 
+where feature is what you want to change as a category `EX: poll` and setting is the 
+specific thing within the feature you want to change `EX: roles`.
 
 
 
@@ -80,4 +79,5 @@ This Is Still Being Worked On And More Info Will Come Out In The Future.
 
 
 
-## Lottery Bot O.o
+## More?
+See Update 0.3.0 for info on new features in this update.
