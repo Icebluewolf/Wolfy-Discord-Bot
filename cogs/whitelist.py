@@ -1,9 +1,7 @@
-import discord
-from main import main_code
 import custom_checks
 import global_functions
 from discord.ext import commands
-from config import discordClient, MCClient, DB_conn, cur, srv_id
+from config import DB_conn, cur
 
 
 class Whitelist(commands.Cog):
@@ -14,7 +12,7 @@ class Whitelist(commands.Cog):
         self.color = 0
 
     @commands.command()
-    @custom_checks.allowed_roles("whitelist_access_roles_id")
+    @custom_checks.allowed_roles("whitelist_role", "whitelist_channel")
     async def whitelist(self, ctx, *, content):
         """
         Allows A User To Whitelist Themselves On The Connected MC Server

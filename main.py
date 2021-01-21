@@ -38,14 +38,14 @@ def main_code():
 
     @discordClient.event
     async def on_guild_join(guild):
-        # Sets up the guilds Database Entry When The Bot Joins A Guild
-        guild = str(guild.id)
-        cur.execute(
-            'INSERT INTO guild_settings (bypass_roles_id, lottery_access_roles_id, '
-            'poll_access_roles_id, whitelist_access_roles_id, "MC_hosting_link", "MC_API_key", "MC_server_id", '
-            'autorespond, guild_id) '
-            'VALUES (NULL, NULL, NULL, NULL, NULL, NULL, NULL, True, %s);', (guild,))
-        DB_conn.commit()
+        # Sends a join message when the bot joins a server
+        bot = guild.me
+        for channel in guild.text_channels:
+            bot_perms = bot.permissions_in(channel)
+            if bot_perms.send_messages:
+                await channel.send(f"Thanks for inviting me members of {guild}. "
+                                   f"To get started an admin can run w!settings")
+                break
 
     @discordClient.event
     async def on_member_join(member):

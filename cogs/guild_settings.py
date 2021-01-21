@@ -23,23 +23,50 @@ class GuildSettings(commands.Cog):
         def check(m):
             return m.channel == ctx.channel and m.author == ctx.author
 
-        async def modify_database(guild, key, value):
-            guild = str(guild)
-            sql = f"UPDATE guild_settings SET {key}={value} WHERE guild_id =%s"
-            cur.execute(sql, (guild,))
+        async def modify_database(guild: str, id_list, setting, key, identifier_column):
+            for id in id_list:
+                sql = f"INSERT INTO {setting} ({key}, guild_id, {identifier_column}) " \
+                    f"VALUES (true, {guild}, {id}) " \
+                    f"ON DUPLICATE KEY UPDATE " \
+                    f"{key}=true;"
+                # sql = f"UPDATE {setting} SET {key}={value} WHERE guild_id =%s"
+                cur.execute(sql, ())
             DB_conn.commit()
 
         async def get_role_name(column):
-            if column is None:
+            if column == []:
                 return "Admins Only"
             output = ""
             for role_id in column:
                 output = output + ctx.guild.get_role(int(role_id)).name + ", "
             return output
 
-        async def get_setting(ctx, prompt):
+        async def get_channel_name(column):
+            if column == []:
+                return "No Channels"
+            output = ""
+            for channel_id in column:
+                print(channel_id)
+                output = output + ctx.guild.get_channel(int(channel_id)).mention + ", "
+            return output
+
+        async def get_setting(ctx, module=None, var=None):
+            if not module:
+                if var == "channel":
+                    message = f"Type The Channel Names(#channel) You Want To Let Use The **{module}** Module. " \
+                              f"(Separate with `,`) Type \"all\" For All Channels."
+                elif var == "role":
+                    message = f"Type The Role Names(Not Ping) You Want To Let Use The **{module}** Module. " \
+                          f"(Separate with `,`) Type \"everyone\" For Everyone."
+            else:
+                print(var)
+                message = f"**{module.capitalize()}**\n" \
+                    f"Roles :\t {await get_role_name(var[0])}\n" \
+                    f"Channels :\t {await get_channel_name(var[1])}" \
+                    f"*Type The Setting You Want To Change*"
+
             await ctx.send(embed=await global_functions.create_embed(title="",
-                                                                     description=prompt,),
+                                                                     description=message,),
                            delete_after=30)
 
             answer = await discordClient.wait_for("message", timeout=30, check=check)
@@ -63,7 +90,7 @@ class GuildSettings(commands.Cog):
                     denied_roles = f"{denied_roles} {response}"
 
             if verified_roles:
-                await modify_database(ctx.guild.id, module, f"ARRAY{verified_roles}")
+                await modify_database(ctx.guild.id, verified_roles, "roles", module, "role_id",)
             if denied_roles != "":
                 await ctx.send(embed=await global_functions.create_embed(title="invalid",
                                                                          description=
@@ -77,13 +104,80 @@ class GuildSettings(commands.Cog):
                                                                          description="The Roles Were Added",),
                                delete_after=30)
 
+        async def get_channels(ctx, setting, module):
+            denied_channels = ""
+            verified_channels = []
+            setting = setting.split(",")
+            print(ctx.guild.channels)
+            for response in setting:
+                response = response.strip()[2:-1]
+                print(response)
+                for channel in ctx.guild.channels:
+                    if response == "all":
+                        verified_channels = [None]
+                        break
+                    elif int(response) == channel.id:
+                        verified_channels.append(channel.id)
+                        break
+                else:
+                    denied_channels = f"{denied_channels} <#{response}>"
+
+            if verified_channels:
+                await modify_database(ctx.guild.id, verified_channels, "text_channels", module, "channel_id",)
+            if denied_channels != "":
+                await ctx.send(embed=await global_functions.create_embed(title="invalid",
+                                                                         description=
+                                                                         f"There Were A Few Channels That I Couldn't Find.\n"
+                                                                         f"They Were : {denied_channels}\nCheck There Spelling And Try Again.\n"
+                                                                         f"Note That This Overwrites The Old List So You Will Need To Write "
+                                                                         f"The Entire List When Modifying",),
+                               delete_after=30)
+            else:
+                await ctx.send(embed=await global_functions.create_embed(title="success",
+                                                                         description="The Roles Were Added",),
+                               delete_after=30)
+
         # Command Code Starts Here
         # Deletes Invocation Message
         await ctx.message.delete()
 
-        cur.execute("select bypass_roles_id, lottery_access_roles_id, poll_access_roles_id, whitelist_access_roles_id "
-                    "from guild_settings where guild_id = %s", (str(ctx.guild.id),))
-        row = cur.fetchall()[0]
+        # Gets Roles
+        cur.execute("select role_id, bypass_role, lottery_role, poll_role, whitelist_role "
+                    "from roles "
+                    "where guild_id = %s", (str(ctx.guild.id),))
+        rows = cur.fetchall()
+
+        bypass_roles = []
+        lottery_roles = []
+        poll_roles = []
+        whitelist_roles = []
+        for row in rows:
+            if row[1]:
+                bypass_roles.append(row[0])
+                continue
+            if row[2]:
+                lottery_roles.append(row[0])
+            if row[3]:
+                poll_roles.append(row[0])
+            if row[4]:
+                whitelist_roles.append(row[0])
+
+        # Gets Channels
+        cur.execute("select channel_id, lottery_channel, poll_channel, whitelist_channel "
+                    "from text_channels "
+                    "where guild_id = %s", (str(ctx.guild.id),))
+        rows = cur.fetchall()
+
+        lottery_channels = []
+        poll_channels = []
+        whitelist_channels = []
+        for channel in rows:
+            if channel[1]:
+                lottery_channels.append(channel[0])
+            if channel[2]:
+                poll_channels.append(channel[0])
+            if channel[3]:
+                whitelist_channels.append(channel[0])
 
         # Checks If There Was A Specified Setting To Start On
         setting_input_1 = ""
@@ -92,6 +186,7 @@ class GuildSettings(commands.Cog):
             setting_input_0 = setting[0]
             if len(setting) >= 2:
                 setting_input_1 = setting[1]
+        # If Not Prompt The User To Define One
         else:
             await ctx.send(embed=await global_functions.create_embed(title="",
                                                                      description=
@@ -100,7 +195,7 @@ class GuildSettings(commands.Cog):
                                                                      "Lottery\n"
                                                                      "Poll\n"
                                                                      "Whitelist\n"
-                                                                     "Bypass NOTE: These Roles Bypass All Permissions"),
+                                                                     "Bypass `NOTE: These Roles Bypass All Permissions`"),
                            delete_after=30)
 
             try:
@@ -111,16 +206,17 @@ class GuildSettings(commands.Cog):
                 await ctx.message.delete()
                 return
 
+        # Enter All Of The Command Specific Data Into The Functions
         if setting_input_0 == "lottery":
             if not setting_input_1:
-                setting_input_1 = await get_setting(ctx, f"**Lottery**\n"
-                                            f"Roles  : {await get_role_name(row[1])}\n"
-                                            f"**Type The Setting You Want To Change**")
+                setting_input_1 = await get_setting(ctx, "lottery", [lottery_roles, lottery_channels])
 
             if setting_input_1 == "roles":
-                setting = await get_setting(ctx, "**Type The Role Names(Not Ping) You Want To Let Use The Lottery."
-                                                 "(Separate with `,`) Type \"everyone\" For Everyone.**")
-                await get_roles(ctx, setting, "lottery_access_roles_id")
+                setting = await get_setting(ctx=ctx, var="role")
+                await get_roles(ctx, setting, "lottery_role")
+            elif setting_input_1 == "channels":
+                setting = await get_setting(ctx=ctx, var="channel")
+                await get_roles(ctx, setting, "lottery_channel")
 
             else:
                 await ctx.send(embed=await global_functions.create_embed(title="invalid",
@@ -131,15 +227,15 @@ class GuildSettings(commands.Cog):
 
         elif setting_input_0 == "poll":
             if not setting_input_1:
-                setting_input_1 = await get_setting(ctx, f"**Poll**\n"
-                                            f"Roles  : {await get_role_name(row[2])}\n"
-                                            f"**Type The Setting You Want To Change**")
+                setting_input_1 = await get_setting(ctx, "poll", [poll_roles, poll_channels])
 
             if setting_input_1 == "roles":
-                setting = await get_setting(ctx,
-                                            "**Type The Role Names You Want To Let Use The Poll.(Separate with `,`)"
-                                            " Type \"everyone\" For Everyone.**")
-                await get_roles(ctx, setting, "poll_access_roles_id")
+                # await get_setting(ctx, "poll", "role")
+                setting = await get_setting(ctx=ctx, var="role")
+                await get_roles(ctx, setting, "poll_role")
+            elif setting_input_1 == "channels":
+                setting = await get_setting(ctx=ctx, var="channel")
+                await get_channels(ctx, setting, "poll_channel")
 
             else:
                 await ctx.send(embed=await global_functions.create_embed(title="invalid",
@@ -150,15 +246,14 @@ class GuildSettings(commands.Cog):
 
         elif setting_input_0 == "whitelist":
             if not setting_input_1:
-                setting_input_1 = await get_setting(ctx, f"**Whitelist**\n"
-                                            f"Roles  : {await get_role_name(row[3])}\n"
-                                            f"**Type The Setting You Want To Change**")
+                setting_input_1 = await get_setting(ctx, "whitelist", [whitelist_roles, whitelist_channels])
 
             if setting_input_1 == "roles":
-                setting = await get_setting(ctx,
-                                            "**Type The Role Names You Want To Let Use The Whitelist."
-                                            "(Separate with `,`) Type \"everyone\"k For Everyone.**")
-                await get_roles(ctx, setting, "whitelist_access_roles_id")
+                setting = await get_setting(ctx=ctx, var="role")
+                await get_roles(ctx, setting, "whitelist_role")
+            elif setting_input_1 == "channels":
+                setting = await get_setting(ctx=ctx, var="channel")
+                await get_channels(ctx, setting, "whitelist_channel")
 
             else:
                 await ctx.send(embed=await global_functions.create_embed(title="invalid",
@@ -166,10 +261,8 @@ class GuildSettings(commands.Cog):
                                delete_after=30)
 
         elif setting_input_0 == "bypass":
-            setting = await get_setting(ctx,
-                                        "**Type The Role Names You Want To Bypass ALL Permissions."
-                                        "(Separate with `,`) Type \"everyone\" For Everyone.**")
-            await get_roles(ctx, setting, "bypass_roles_id")
+            setting = await get_setting(ctx, "bypass", bypass_roles)
+            await get_roles(ctx, setting, "bypass_role")
 
         else:
             await ctx.send(embed=await global_functions.create_embed(title="invalid",
