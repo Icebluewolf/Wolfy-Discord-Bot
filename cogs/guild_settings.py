@@ -62,7 +62,7 @@ class GuildSettings(commands.Cog):
                 print(var)
                 message = f"**{module.capitalize()}**\n" \
                     f"Roles :\t {await get_role_name(var[0])}\n" \
-                    f"Channels :\t {await get_channel_name(var[1])}" \
+                    f"Channels :\t {await get_channel_name(var[1])}\n" \
                     f"*Type The Setting You Want To Change*"
 
             await ctx.send(embed=await global_functions.create_embed(title="",
@@ -142,7 +142,7 @@ class GuildSettings(commands.Cog):
         await ctx.message.delete()
 
         # Gets Roles
-        cur.execute("select role_id, bypass_role, lottery_role, poll_role, whitelist_role "
+        cur.execute("select role_id, bypass_role, lottery_role, poll_role, whitelist_role, rr_role "
                     "from roles "
                     "where guild_id = %s", (str(ctx.guild.id),))
         rows = cur.fetchall()
@@ -151,6 +151,7 @@ class GuildSettings(commands.Cog):
         lottery_roles = []
         poll_roles = []
         whitelist_roles = []
+        rr_roles = []
         for row in rows:
             if row[1]:
                 bypass_roles.append(row[0])
@@ -161,9 +162,11 @@ class GuildSettings(commands.Cog):
                 poll_roles.append(row[0])
             if row[4]:
                 whitelist_roles.append(row[0])
+            if row[5]:
+                rr_roles.append(row[0])
 
         # Gets Channels
-        cur.execute("select channel_id, lottery_channel, poll_channel, whitelist_channel "
+        cur.execute("select channel_id, lottery_channel, poll_channel, whitelist_channel, rr_channel "
                     "from text_channels "
                     "where guild_id = %s", (str(ctx.guild.id),))
         rows = cur.fetchall()
@@ -171,6 +174,7 @@ class GuildSettings(commands.Cog):
         lottery_channels = []
         poll_channels = []
         whitelist_channels = []
+        rr_channels = []
         for channel in rows:
             if channel[1]:
                 lottery_channels.append(channel[0])
@@ -178,6 +182,8 @@ class GuildSettings(commands.Cog):
                 poll_channels.append(channel[0])
             if channel[3]:
                 whitelist_channels.append(channel[0])
+            if channel[4]:
+                rr_channels.append(channel[0])
 
         # Checks If There Was A Specified Setting To Start On
         setting_input_1 = ""
@@ -195,6 +201,7 @@ class GuildSettings(commands.Cog):
                                                                      "Lottery\n"
                                                                      "Poll\n"
                                                                      "Whitelist\n"
+                                                                     "Reaction Roles (rr)\n"
                                                                      "Bypass `NOTE: These Roles Bypass All Permissions`"),
                            delete_after=30)
 
@@ -254,6 +261,23 @@ class GuildSettings(commands.Cog):
             elif setting_input_1 == "channels":
                 setting = await get_setting(ctx=ctx, var="channel")
                 await get_channels(ctx, setting, "whitelist_channel")
+
+            else:
+                await ctx.send(embed=await global_functions.create_embed(title="invalid",
+                                                             description=f"That Is Not An Option"),
+                               delete_after=30)
+
+
+        elif setting_input_0 == "rr":
+            if not setting_input_1:
+                setting_input_1 = await get_setting(ctx, "rr", [rr_roles, rr_channels])
+
+            if setting_input_1 == "roles":
+                setting = await get_setting(ctx=ctx, var="role")
+                await get_roles(ctx, setting, "rr_role")
+            elif setting_input_1 == "channels":
+                setting = await get_setting(ctx=ctx, var="channel")
+                await get_channels(ctx, setting, "rr_channel")
 
             else:
                 await ctx.send(embed=await global_functions.create_embed(title="invalid",
