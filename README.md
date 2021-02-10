@@ -1,21 +1,22 @@
 # Wolfy - Discord Bot
 ## Welcome To The GitHub For Wolfy Discord Bot.
 This Is A Personal Discord Bot Created With Python To Preform Some Tasks On My Discord Server.
+I Am Now Trying To Allow The Public To Use This Bot.
 
-Version : 0.3.0
+#### Version : 0.2.0
+Note : I relaunched the release of the bot so the versions reset to 0.0.0
 
 ### Table Of Contents
 - [Introduction](#introduction)
-- [Custom Responding](#custom-responding)
 - [Polls](#polls)
 - [Whitelisting](#whitelisting)
 - [Custom Settings](#custom-Settings)
-- [Announcements](#announcements)
+- [Reaction Roles](#announcements)
 
 
 ## Introduction
-This is a Discord Bot That Has Been Created To Help Me Learn Python. This Bot Will Also Help Me With Some Tasks On My Personal Discord Server.
-The Technology I Use Is Python 3.7.
+This is a Discord Bot That Has Been Created To Help Me Learn Python.
+The Bot Uses Python 3.7 Along With Discord.py.
 
 The prefix for all commands on this bot is : `w!`
 
@@ -33,13 +34,6 @@ Please Only Contact Ice Wolfy#5283 With Issues Unless Otherwise Told.
 
 
 
-## Custom Responding
-I Have A Few Messages That When Said In Chat The Bot Will Auto-Respond To Them.<br>
-ex. When You Say "Werf" The Bot Will Respond With "Werf!"
-There is no command for this!
-
-
-
 ## Polls
 This Feature Is For Getting The Input Of Others.<br>
 You Can Type In A Command And Wolfy Will Make A Custom Embed/Message For Your Poll.
@@ -49,6 +43,14 @@ The Time Is A Group Of Characters, You Can Use d For Days, h For Hours, m For Mi
 You Must Do Them In Order (dhms) But, Are Not Required To Use All Fields. If A Field Is Unused It Will Be Set To Zero. 
 There Is A Limit Of 20 Options In The Poll Because Of Discords Limit Of 20 Reactions Per Message.
 
+
+## Reaction Roles
+This will help your server not rely on staff to give out roles.
+This can be used to set up an announcement role that users can opt in for so you dont have to ping @everyone. 
+If you want to know what games your users are interested in put up a few reactions roles with the top games.
+When users click the reaction they will get the specified role. When the remove the reaction there role will be removed!
+The format for this command is `w!rr <add|remove> <emoji> <message_id> <role_id> [channel_id, for add only]`.
+You can also list your servers reaction roles with `w!rr list` and if you need help with copying IDs run `w!rr id`
 
 
 ## Whitelisting 
@@ -73,11 +75,5 @@ specific thing within the feature you want to change `EX: roles`.
 
 
 
-## Announcements
-This Is Still Being Worked On And More Info Will Come Out In The Future.
-##### Update : I have decided that this is not an important feature So It Will Not Be On The To-Do List Anymore
-
-
-
 ## More?
-See Update 0.3.0 for info on new features in this update.
+See Update 0.2.0 for info on new features in this update.
