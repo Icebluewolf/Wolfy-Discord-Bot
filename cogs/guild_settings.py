@@ -267,7 +267,6 @@ class GuildSettings(commands.Cog):
                                                              description=f"That Is Not An Option"),
                                delete_after=30)
 
-
         elif setting_input_0 == "rr":
             if not setting_input_1:
                 setting_input_1 = await get_setting(ctx, "rr", [rr_roles, rr_channels])
