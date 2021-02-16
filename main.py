@@ -83,6 +83,7 @@ def main_code():
         if filename.endswith(".py"):
             discordClient.load_extension(f"cogs.{filename[:-3]}")
 
+    discordClient.load_extension('jishaku')
     discordClient.run(private.clientSecret)
 
 
