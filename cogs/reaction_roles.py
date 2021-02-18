@@ -149,6 +149,10 @@ class ReactionRoles(commands.Cog):
                     pass
 
     @rr.error
+    @add.error
+    @remove.error
+    @id.error
+    @list.error
     async def rr_error(self, ctx, error):
         await ctx.message.delete()
         if isinstance(error, commands.CheckFailure):
