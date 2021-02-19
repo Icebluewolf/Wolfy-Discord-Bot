@@ -11,27 +11,34 @@ class ReactionRoles(commands.Cog):
 
     @commands.group(invoke_without_command=True, aliases=["reactionroles", "reaction roles",], )
     @custom_checks.allowed_roles("rr_role", "rr_channel")
-    async def rr(self, ctx):
+    async def rr(self, ctx, emoji):
+        print(emoji)
         await ctx.send("reaction roles")
 
     @rr.command()
     @custom_checks.allowed_roles("rr_role", "rr_channel")
     async def add(self, ctx, emoji, message_id, role_id, channel_id=None):
-        if len(emoji) != 1:
-            emoji_id = emoji[-19:-1]
-        else:
+        # if len(emoji) != 1:
+        #     emoji_id = emoji[-19:-1]
+        # else:
+        #     emoji_id = emoji
+
+        try:
+            emoji_id = await commands.PartialEmojiConverter().convert(ctx=ctx, argument=emoji)
+            emoji_id = emoji_id.id
+        except commands.BadArgument:
             emoji_id = emoji
 
         if channel_id is None:
             channel_id = ctx.channel.id
 
-        if len(emoji_id) != 1 and (len(emoji_id) != 18 or not emoji_id.isdigit()):
-            if len(message_id) != 18 or not message_id.isdigit():
-                if len(role_id) != 18 or not role_id.isdigit():
-                    if channel_id is not None:
-                        if len(channel_id) != 18 or not channel_id.isdigit():
-                            await ctx.send("Make sure to follow the format `w!rr add <emoji> <message_id> <role_id> [channel_id]")
-                            return
+        # if len(emoji_id) != 1 and (len(emoji_id) != 18 or not emoji_id.isdigit()):
+        if len(message_id) != 18 or not message_id.isdigit():
+            if len(role_id) != 18 or not role_id.isdigit():
+                if channel_id is not None:
+                    if len(channel_id) != 18 or not channel_id.isdigit():
+                        await ctx.send("Make sure to follow the format `w!rr add <emoji> <message_id> <role_id> [channel_id]")
+                        return
 
         sql = f"INSERT INTO reaction_roles (message_id , emoji_id, guild_id, role_id, channel_id) " \
               f"VALUES ('{message_id}', '{emoji_id}', '{ctx.guild.id}', '{role_id}', '{channel_id}')"
@@ -44,9 +51,10 @@ class ReactionRoles(commands.Cog):
                     await message.add_reaction(emoji)
                     cur.execute(sql, ())
                     DB_conn.commit()
+                    await ctx.send("The Reaction Role Was Added!")
                 except discord.Forbidden:
                     await ctx.send("I Dont Have Permission To Add Reactions Here")
-                except discord.NotFound:
+                except discord.HTTPException:
                     await ctx.send("I Could Not Find That Emoji")
             except discord.NotFound:
                 await ctx.send(
@@ -58,18 +66,31 @@ class ReactionRoles(commands.Cog):
     @rr.command()
     @custom_checks.allowed_roles("rr_role", "rr_channel")
     async def remove(self, ctx, emoji, message_id):
-        if len(emoji) != 1 and (len(emoji) != 18 or emoji.isdigit()):
-            if len(message_id) != 18 or message_id.isdigit():
-                await ctx.send("Make sure to follow the format `w!rr remove <emoji> <message_id>")
-                return
+        # if len(emoji) != 1 and (len(emoji) != 18 or emoji.isdigit()):
+        if len(message_id) != 18 or not message_id.isdigit():
+            await ctx.send("Make sure to follow the format `w!rr remove <emoji> <message_id>")
+            return
+
+        try:
+            emoji_id = await commands.PartialEmojiConverter().convert(ctx=ctx, argument=emoji)
+            emoji_id = emoji_id.id
+        except commands.BadArgument:
+            emoji_id = emoji
+
         sql = f"DELETE FROM reaction_roles " \
-            f"WHERE message_id='{message_id}' AND emoji_id='{emoji}'"
-        cur.execute(sql, ())
-        if cur.rowcount == 0:
-            await ctx.send("That Is Not A Reaction Role Message/Emoji")
-        else:
-            DB_conn.commit()
-            await ctx.send("Successfully Deleted The Reaction Role")
+            f"WHERE message_id='{message_id}' AND emoji_id='{emoji_id}'"
+
+        try:
+            await ctx.message.add_reaction(emoji)
+            cur.execute(sql, ())
+
+            if cur.rowcount == 0:
+                await ctx.send("That Is Not A Reaction Role Message/Emoji")
+            else:
+                DB_conn.commit()
+                await ctx.send("Successfully Deleted The Reaction Role")
+        except discord.HTTPException:
+            await ctx.send("That Is Not A Valid Emoji")
 
     @rr.command()
     @custom_checks.allowed_roles("rr_role", "rr_channel")
@@ -154,6 +175,7 @@ class ReactionRoles(commands.Cog):
     @id.error
     @list.error
     async def rr_error(self, ctx, error):
+        print(f"RR Error: {error}")
         await ctx.message.delete()
         if isinstance(error, commands.CheckFailure):
             await ctx.send(embed=await global_functions.create_embed(title="fail",
