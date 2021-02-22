@@ -2,7 +2,7 @@ import discord
 import mysql.connector as mysql
 import private
 from pydactyl import PterodactylClient
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 # Enable Intents
 intents = discord.Intents.default()
@@ -13,7 +13,7 @@ discordClient = commands.Bot(command_prefix="w!", intents=intents)
 MCClient = PterodactylClient("https://panel.primedhosting.com/", private.PH_API_KEY)
 # Connect To DB
 DB_conn = mysql.connect(
-    host="localhost",
+    host=private.DB_conn,
     user=private.DBuser,
     password=private.DBpassword,
 )
@@ -22,5 +22,12 @@ DB_conn = mysql.connect(
 cur = DB_conn.cursor()
 srv_id = "bf9213e8"
 
-# set default DB
-cur.execute("USE wolfy_bot_test;")
+
+# Ping the DB every 2 hours to keep the connection open.
+@tasks.loop(hours=2)
+async def db_ping():
+    # set default DB
+    cur.execute(f"USE {private.DB_name};")
+
+
+db_ping.start()
