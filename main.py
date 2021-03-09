@@ -84,7 +84,6 @@ def main_code():
             discordClient.load_extension(f"cogs.{filename[:-3]}")
 
     discordClient.load_extension('jishaku')
-    discordClient.load_extension("cogs/stat")
     discordClient.run(private.clientSecret)
 
 
