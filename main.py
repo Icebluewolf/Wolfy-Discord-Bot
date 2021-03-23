@@ -47,13 +47,19 @@ def main_code():
                                    f"To get started an admin can run w!settings")
                 break
 
+        # Add Row In guild_settings
+        sql = "INSERT INTO guild_settings (guild_id) " \
+              "VALUES (%s) " \
+              "ON DUPLICATE KEY UPDATE guild_id = (%s);"
+        cur.execute(sql, (guild.id, guild.id))
+        DB_conn.commit()
+
     @discordClient.event
     async def on_member_join(member):
         # Sets Up The Users Database User Info When A User Join A Server
         cur.execute("SELECT * FROM user_data WHERE discord_user_id=%s AND guild_id=%s",
                     (str(member.id), str(member.guild.id)))
         row = cur.fetchall()
-        print(row)
         if row:
             return
         else:

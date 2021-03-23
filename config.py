@@ -1,5 +1,5 @@
 import discord
-import mysql.connector as mysql
+import aiomysql
 import private
 from pydactyl import PterodactylClient
 from discord.ext import commands, tasks
@@ -12,14 +12,14 @@ discordClient = commands.Bot(command_prefix="w!", intents=intents)
 # Set MC Pterodactyl Console Client
 MCClient = PterodactylClient("https://panel.primedhosting.com/", private.PH_API_KEY)
 # Connect To DB
-DB_conn = mysql.connect(
+DB_conn = await aiomysql.connect(
     host=private.DB_conn,
     user=private.DBuser,
     password=private.DBpassword,
 )
 
 # Set Up Vars
-cur = DB_conn.cursor()
+cur = await DB_conn.cursor()
 srv_id = "bf9213e8"
 
 
@@ -27,7 +27,7 @@ srv_id = "bf9213e8"
 @tasks.loop(hours=2)
 async def db_ping():
     # set default DB
-    cur.execute(f"USE {private.DB_name};")
+    await cur.execute(f"USE {private.DB_name};")
 
 
 db_ping.start()

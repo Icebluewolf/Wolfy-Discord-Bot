@@ -10,10 +10,10 @@ from discord.ext import commands
 def allowed_roles(module_roles, module_channels,):
     async def predicate(ctx):
         # Get DB row
-        cur.execute("SELECT role_id, bypass_role "
+        await cur.execute("SELECT role_id, bypass_role "
                     "FROM roles WHERE guild_id=%s and (" + module_roles + "=True OR bypass_role=True)",
                     (str(ctx.guild.id),))
-        rows = cur.fetchall()
+        rows = await cur.fetchall()
 
         # print(roles[0])
         # print(roles[0][0])
@@ -51,9 +51,9 @@ def allowed_roles(module_roles, module_channels,):
             if int(item) in author_roles:
                 # Check if they are in an approved channel.
                 # Call the Channel DB
-                cur.execute("SELECT channel_id FROM text_channels WHERE guild_id=%s and " + module_channels + "=True",
+                await cur.execute("SELECT channel_id FROM text_channels WHERE guild_id=%s and " + module_channels + "=True",
                             (str(ctx.guild.id),))
-                rows = cur.fetchall()
+                rows = await cur.fetchall()
 
                 # Check if channels is None.
                 channel_ids = []

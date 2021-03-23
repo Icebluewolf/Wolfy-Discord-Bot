@@ -49,7 +49,7 @@ class ReactionRoles(commands.Cog):
                 message = await channel.fetch_message(message_id)
                 try:
                     await message.add_reaction(emoji)
-                    cur.execute(sql, ())
+                    await cur.execute(sql, ())
                     DB_conn.commit()
                     await ctx.send("The Reaction Role Was Added!")
                 except discord.Forbidden:
@@ -82,9 +82,9 @@ class ReactionRoles(commands.Cog):
 
         try:
             await ctx.message.add_reaction(emoji)
-            cur.execute(sql, ())
+            await cur.execute(sql, ())
 
-            if cur.rowcount == 0:
+            if await cur.rowcount == 0:
                 await ctx.send("That Is Not A Reaction Role Message/Emoji")
             else:
                 DB_conn.commit()
@@ -105,8 +105,8 @@ class ReactionRoles(commands.Cog):
         await ctx.message.delete()
         sql = f"SELECT emoji_id, message_id, role_id, channel_id FROM reaction_roles " \
             f"WHERE guild_id='{ctx.guild.id}'"
-        cur.execute(sql, ())
-        rr_list = cur.fetchall()
+        await cur.execute(sql, ())
+        rr_list = await cur.fetchall()
         rr_string = ""
         for row in rr_list:
             if len(row[0]) == 18:
@@ -135,8 +135,8 @@ class ReactionRoles(commands.Cog):
         sql = f"SELECT role_id " \
             f"FROM reaction_roles " \
             f"WHERE message_id='{payload.message_id}' and emoji_id='{emoji}'"
-        cur.execute(sql, ())
-        role = cur.fetchone()
+        await cur.execute(sql, ())
+        role = await cur.fetchone()
         if role is not None:
             try:
                 await payload.member.add_roles(discord.Object(int(role[0])), reason="Reaction Roles")
@@ -156,8 +156,8 @@ class ReactionRoles(commands.Cog):
         sql = f"SELECT role_id " \
             f"FROM reaction_roles " \
             f"WHERE message_id='{payload.message_id}' and emoji_id='{emoji}'"
-        cur.execute(sql, ())
-        role = cur.fetchone()
+        await cur.execute(sql, ())
+        role = await cur.fetchone()
         if role is not None:
             guild = discordClient.get_guild(payload.guild_id)
             member = guild.get_member(payload.user_id)

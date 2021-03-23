@@ -22,8 +22,8 @@ class Whitelist(commands.Cog):
         if content.strip == "":
             return
         # Get Users Database Entry
-        cur.execute("select whitelist from user_data where discord_user_id = %s", (str(ctx.author.id),))
-        is_present = cur.fetchone()
+        await cur.execute("select whitelist from user_data where discord_user_id = %s", (str(ctx.author.id),))
+        is_present = await cur.fetchone()
 
         if is_present is None:
             await global_functions.add_user_db_row(ctx.author)
@@ -40,7 +40,7 @@ class Whitelist(commands.Cog):
         else:
             user_id = str(ctx.author.id)
             sql = "UPDATE user_data SET whitelist=false WHERE discord_user_id=%s"
-            cur.execute(sql, (user_id,))
+            await cur.execute(sql, (user_id,))
             DB_conn.commit()
             # MCClient.client.send_console_command(srv_id, "whitelist add " + content)
             await ctx.send(embed=await global_functions.create_embed(title="Success",
