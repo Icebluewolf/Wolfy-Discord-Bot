@@ -1,7 +1,6 @@
 import custom_checks
 import global_functions
 from discord.ext import commands
-from config import DB_conn, cur
 
 
 class Whitelist(commands.Cog):
@@ -22,8 +21,8 @@ class Whitelist(commands.Cog):
         if content.strip == "":
             return
         # Get Users Database Entry
-        await cur.execute("select whitelist from user_data where discord_user_id = %s", (str(ctx.author.id),))
-        is_present = await cur.fetchone()
+        await self.bot.db.execute("select whitelist from user_data where discord_user_id = %s", (str(ctx.author.id),))
+        is_present = await self.bot.db.fetchone()
 
         if is_present is None:
             await global_functions.add_user_db_row(ctx.author)
@@ -40,8 +39,8 @@ class Whitelist(commands.Cog):
         else:
             user_id = str(ctx.author.id)
             sql = "UPDATE user_data SET whitelist=false WHERE discord_user_id=%s"
-            await cur.execute(sql, (user_id,))
-            DB_conn.commit()
+            await self.bot.db.execute(sql, (user_id,))
+            await self.bot.db.commit()
             # MCClient.client.send_console_command(srv_id, "whitelist add " + content)
             await ctx.send(embed=await global_functions.create_embed(title="Success",
                                                                      description=

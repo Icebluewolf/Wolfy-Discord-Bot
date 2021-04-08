@@ -1,7 +1,3 @@
-# Custom Checks
-
-import discord
-from config import cur
 from discord.ext import commands
 
 
@@ -10,10 +6,10 @@ from discord.ext import commands
 def allowed_roles(module_roles, module_channels,):
     async def predicate(ctx):
         # Get DB row
-        await cur.execute("SELECT role_id, bypass_role "
+        await ctx.bot.db.execute("SELECT role_id, bypass_role "
                     "FROM roles WHERE guild_id=%s and (" + module_roles + "=True OR bypass_role=True)",
                     (str(ctx.guild.id),))
-        rows = await cur.fetchall()
+        rows = await ctx.bot.db.fetchall()
 
         # print(roles[0])
         # print(roles[0][0])
@@ -51,9 +47,9 @@ def allowed_roles(module_roles, module_channels,):
             if int(item) in author_roles:
                 # Check if they are in an approved channel.
                 # Call the Channel DB
-                await cur.execute("SELECT channel_id FROM text_channels WHERE guild_id=%s and " + module_channels + "=True",
+                await ctx.bot.db.execute("SELECT channel_id FROM text_channels WHERE guild_id=%s and " + module_channels + "=True",
                             (str(ctx.guild.id),))
-                rows = await cur.fetchall()
+                rows = await ctx.bot.db.fetchall()
 
                 # Check if channels is None.
                 channel_ids = []
@@ -68,4 +64,3 @@ def allowed_roles(module_roles, module_channels,):
                     return True
 
     return commands.check(predicate)
-

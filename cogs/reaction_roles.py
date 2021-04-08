@@ -2,7 +2,7 @@ import discord
 import custom_checks
 import global_functions
 from discord.ext import commands
-from config import discordClient, DB_conn, cur
+from config import discordClient
 
 
 class ReactionRoles(commands.Cog):
@@ -49,8 +49,8 @@ class ReactionRoles(commands.Cog):
                 message = await channel.fetch_message(message_id)
                 try:
                     await message.add_reaction(emoji)
-                    await cur.execute(sql, ())
-                    DB_conn.commit()
+                    await self.bot.db.execute(sql, ())
+                    await self.bot.db.commit()
                     await ctx.send("The Reaction Role Was Added!")
                 except discord.Forbidden:
                     await ctx.send("I Dont Have Permission To Add Reactions Here")
@@ -82,12 +82,12 @@ class ReactionRoles(commands.Cog):
 
         try:
             await ctx.message.add_reaction(emoji)
-            await cur.execute(sql, ())
+            await self.bot.db.execute(sql, ())
 
-            if await cur.rowcount == 0:
+            if await self.bot.db.rowcount == 0:
                 await ctx.send("That Is Not A Reaction Role Message/Emoji")
             else:
-                DB_conn.commit()
+                self.bot.db.commit()
                 await ctx.send("Successfully Deleted The Reaction Role")
         except discord.HTTPException:
             await ctx.send("That Is Not A Valid Emoji")
@@ -105,8 +105,8 @@ class ReactionRoles(commands.Cog):
         await ctx.message.delete()
         sql = f"SELECT emoji_id, message_id, role_id, channel_id FROM reaction_roles " \
             f"WHERE guild_id='{ctx.guild.id}'"
-        await cur.execute(sql, ())
-        rr_list = await cur.fetchall()
+        await self.bot.db.execute(sql, ())
+        rr_list = await self.bot.db.fetchall()
         rr_string = ""
         for row in rr_list:
             if len(row[0]) == 18:
@@ -135,8 +135,8 @@ class ReactionRoles(commands.Cog):
         sql = f"SELECT role_id " \
             f"FROM reaction_roles " \
             f"WHERE message_id='{payload.message_id}' and emoji_id='{emoji}'"
-        await cur.execute(sql, ())
-        role = await cur.fetchone()
+        await self.bot.db.execute(sql, ())
+        role = await self.bot.db.fetchone()
         if role is not None:
             try:
                 await payload.member.add_roles(discord.Object(int(role[0])), reason="Reaction Roles")
@@ -156,8 +156,8 @@ class ReactionRoles(commands.Cog):
         sql = f"SELECT role_id " \
             f"FROM reaction_roles " \
             f"WHERE message_id='{payload.message_id}' and emoji_id='{emoji}'"
-        await cur.execute(sql, ())
-        role = await cur.fetchone()
+        await self.bot.db.execute(sql, ())
+        role = await self.bot.db.fetchone()
         if role is not None:
             guild = discordClient.get_guild(payload.guild_id)
             member = guild.get_member(payload.user_id)

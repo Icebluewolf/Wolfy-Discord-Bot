@@ -5,7 +5,6 @@ import re
 import global_functions
 import custom_checks
 from discord.ext import commands
-from config import discordClient, DB_conn, cur
 
 client = discord.Client()
 

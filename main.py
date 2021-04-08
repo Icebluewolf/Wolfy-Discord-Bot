@@ -1,6 +1,6 @@
 import discord
 import os
-from config import discordClient, cur, DB_conn
+from config import discordClient
 import private
 import global_functions
 from discord.ext import commands
@@ -37,7 +37,7 @@ def main_code():
                        delete_after=30)
 
     @discordClient.event
-    async def on_guild_join(guild):
+    async def on_guild_join(guild, bot_instance):
         # Sends a join message when the bot joins a server
         bot = guild.me
         for channel in guild.text_channels:
@@ -51,38 +51,19 @@ def main_code():
         sql = "INSERT INTO guild_settings (guild_id) " \
               "VALUES (%s) " \
               "ON DUPLICATE KEY UPDATE guild_id = (%s);"
-        cur.execute(sql, (guild.id, guild.id))
-        DB_conn.commit()
+        bot_instance.db.execute(sql, (guild.id, guild.id))
+        bot_instance.db.commit()
 
     @discordClient.event
-    async def on_member_join(member):
+    async def on_member_join(member, bot):
         # Sets Up The Users Database User Info When A User Join A Server
-        cur.execute("SELECT * FROM user_data WHERE discord_user_id=%s AND guild_id=%s",
+        bot.db.execute("SELECT * FROM user_data WHERE discord_user_id=%s AND guild_id=%s",
                     (str(member.id), str(member.guild.id)))
-        row = cur.fetchall()
+        row = bot.db.fetchall()
         if row:
             return
         else:
-            await global_functions.add_user_db_row(member)
-
-    # Simple Call And Response
-    msgList = [
-      ["werf", "werf"],
-      ["warf", "warf"],
-      ["O.o", "<:SusOwl:715254309079613543>"],
-      ["o.O", "WRONG WAY!"],
-    ]
-
-    async def on_message(message):
-        # Don't check your own hehe
-        if message.author == discordClient.user:
-            return
-
-        # Do simple throw back messages
-        for msgInfo in msgList:
-            if msgInfo[0] == message:
-                await message.channel.send(msgInfo[1])
-                return
+            await global_functions.add_user_db_row(member, bot)
 
     # Run The Bot And Load Cogs
     for filename in os.listdir("./cogs"):

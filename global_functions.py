@@ -1,14 +1,14 @@
 import discord
-from config import cur, DB_conn
+# from config import cur, DB_conn
 
 
-async def add_user_db_row(member):
-    await cur.execute(
+async def add_user_db_row(member, bot):
+    await bot.db.execute(
                 "INSERT INTO user_data (discord_user, discord_user_id, whitelist, guild_id) "
                 "VALUES ('{}', {}, True, {});".format(member.name + "#" + member.discriminator,
                                                       member.id,
                                                       member.guild.id))
-    DB_conn.commit()
+    await bot.db.commit()
 
 
 async def create_embed(title, description, color=0x08D4D0):

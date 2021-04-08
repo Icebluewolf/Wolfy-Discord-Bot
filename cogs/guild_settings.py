@@ -1,4 +1,4 @@
-from config import discordClient, DB_conn, cur
+from config import discordClient
 from discord.ext import commands
 import asyncio
 import global_functions
@@ -11,6 +11,8 @@ for i in module_list:
 
 
 class GuildSettings(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
 
     @commands.command()
     @commands.has_permissions(administrator=True)
@@ -30,8 +32,8 @@ class GuildSettings(commands.Cog):
                     f"ON DUPLICATE KEY UPDATE " \
                     f"{key}=true;"
                 # sql = f"UPDATE {setting} SET {key}={value} WHERE guild_id =%s"
-                cur.execute(sql, ())
-            DB_conn.commit()
+                self.bot.db.execute(sql, ())
+            self.bot.db.commit()
 
         async def get_role_name(column):
             if column == []:
@@ -142,10 +144,10 @@ class GuildSettings(commands.Cog):
         await ctx.message.delete()
 
         # Gets Roles
-        cur.execute("select role_id, bypass_role, lottery_role, poll_role, whitelist_role, rr_role "
+        self.bot.db.execute("select role_id, bypass_role, lottery_role, poll_role, whitelist_role, rr_role "
                     "from roles "
                     "where guild_id = %s", (str(ctx.guild.id),))
-        rows = cur.fetchall()
+        rows = self.bot.db.fetchall()
 
         bypass_roles = []
         lottery_roles = []
@@ -166,10 +168,10 @@ class GuildSettings(commands.Cog):
                 rr_roles.append(row[0])
 
         # Gets Channels
-        cur.execute("select channel_id, lottery_channel, poll_channel, whitelist_channel, rr_channel "
+        self.bot.db.execute("select channel_id, lottery_channel, poll_channel, whitelist_channel, rr_channel "
                     "from text_channels "
                     "where guild_id = %s", (str(ctx.guild.id),))
-        rows = cur.fetchall()
+        rows = self.bot.db.fetchall()
 
         lottery_channels = []
         poll_channels = []
