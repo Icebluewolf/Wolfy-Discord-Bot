@@ -87,7 +87,7 @@ class ReactionRoles(commands.Cog):
             if await self.bot.db.rowcount == 0:
                 await ctx.send("That Is Not A Reaction Role Message/Emoji")
             else:
-                self.bot.db.commit()
+                await self.bot.db.commit()
                 await ctx.send("Successfully Deleted The Reaction Role")
         except discord.HTTPException:
             await ctx.send("That Is Not A Valid Emoji")
