@@ -1,66 +1,49 @@
 from discord.ext import commands
 
 
+async def has_role(setting: str, ctx: commands.Context):
+    setting = setting + "_role"
+    await commands.bot.db.exacute("""SELECT setting_value FROM guild_settings
+            WHERE guild_id=%s AND setting_name='bypass'""", (ctx.guild.id,))
+    row = await commands.bot.db.fetchone()
+
+    if row:
+        return commands.has_any_role(row.split(","))
+    else:
+        await commands.bot.db.exacute("""SELECT setting_value FROM guild_settings
+                WHERE guild_id=%s AND setting_name=%s;""", (ctx.guild.id, setting))
+        row = await commands.bot.db.fetchone()
+
+        if row:
+            return commands.has_any_role(row.split(","))
+        else:
+            return False
+
+
+async def in_channel(setting: str, ctx: commands.Context):
+    setting = setting + "_channel"
+    await commands.bot.db.exacute("""SELECT setting_value FROM guild_settings
+            WHERE guild_id=%s AND setting_name=%s""", (ctx.guild.id, setting))
+    row = await commands.bot.db.fetchone()
+
+    if row:
+        return str(ctx.channel.id) in row.split(",")
+    else:
+        return False
+
+
 # Checks If The User Has Permission To Use The Command And If It Is In An Approved Channel
 # Any Roles In "bypass_roles_id"(Defaulted to Admins) Bypass *ALL* Restrictions
-def allowed_roles(module_roles, module_channels,):
-    async def predicate(ctx):
-        # Get DB row
-        await ctx.bot.db.execute("SELECT role_id, bypass_role "
-                    "FROM roles WHERE guild_id=%s and (" + module_roles + "=True OR bypass_role=True)",
-                    (str(ctx.guild.id),))
-        rows = await ctx.bot.db.fetchall()
-
-        # print(roles[0])
-        # print(roles[0][0])
-        approved_roles = []
-        bypass_roles = []
-        for role in rows:
-            # check if the column is not empty
-            # if role[0] is True:
-            #     approved_roles.append(role[0])
-            # if row[0][1] is not None:
-            #     channel = row[0][1]
-            # else:
-            #     channel = []
-            if role[1] == 1:
-                bypass_roles.append(role[0])
-            else:
-                approved_roles.append(role[0])
-
-        # get the authors current roles
-        author_roles = []
-        for i in ctx.author.roles:
-            author_roles.append(i.id)
-
-        # If the user is admin let them continue
-        if ctx.author.guild_permissions.administrator:
+def has_perms(setting: str):
+    def predicate(ctx: commands.Context):
+        if commands.has_permissions(administrator=True):
             return True
-
-        # check if the user has a bypass role if so let them continue
-        for item in bypass_roles:
-            if int(item) in author_roles:
+        elif await has_role(setting, ctx):
+            if await in_channel(setting, ctx):
                 return True
-
-        # check if the user has a allowed role if so let them continue
-        for item in approved_roles:
-            if int(item) in author_roles:
-                # Check if they are in an approved channel.
-                # Call the Channel DB
-                await ctx.bot.db.execute("SELECT channel_id FROM text_channels WHERE guild_id=%s and " + module_channels + "=True",
-                            (str(ctx.guild.id),))
-                rows = await ctx.bot.db.fetchall()
-
-                # Check if channels is None.
-                channel_ids = []
-                for channel in rows:
-                    channel_ids.append(channel[0])
-
-                # channel_ids = []
-                # for i in ctx.guild.text_channels:
-                #     channel_ids.append(i.id)
-
-                if str(ctx.channel.id) in channel_ids:
-                    return True
+            else:
+                return False
+        else:
+            return False
 
     return commands.check(predicate)
