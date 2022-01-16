@@ -22,7 +22,7 @@ timeSeconds = 0
 class Poll(commands.Cog):
 
     @commands.command()
-    @custom_checks.allowed_roles("poll_role", "poll_channel")
+    @custom_checks.has_perms("poll")
     async def poll(self, ctx, *, content):
         """
         Makes A Poll That Users Can Vote On.

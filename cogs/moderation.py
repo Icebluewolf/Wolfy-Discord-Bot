@@ -22,19 +22,16 @@ class Moderation(commands.Cog):
         await channel.send(embed=embed)
 
     async def db_infraction(self, user_id, prosecutor_id, guild_id, infraction_type, reason=None):
-        sql = f"INSERT INTO infractions (userID, prosecutorID, guildID, type, reason, datetime) " \
-              f"VALUES ('{user_id}', '{prosecutor_id}', '{guild_id}', '{infraction_type}', '{reason}', NOW());" \
-              f"SELECT LAST_INSERT_ID() FROM infractions;"
-        await self.bot.db.execute(sql)
-        if self.bot.db.lastrowid is not None:
-            infraction_id = self.bot.db.lastrowid
-        else:
-            infraction_id = "Error"
+        sql = """INSERT INTO infractions ("userID", "prosecutorID", "guildID", type, reason, datetime) 
+              VALUES ($1, $2, $3, $4, $5, localtimestamp) RETURNING infraction_id;"""
+        infraction_id = await self.bot.db.fetchval(sql, user_id, prosecutor_id, guild_id, infraction_type, reason)
+        # await self.bot.db.fetch("SELECT LAST_INSERT_ID() FROM infractions;")
 
         return infraction_id
 
     @commands.command()
     @commands.guild_only()
+    @custom_checks.has_perms("ban")
     async def ban(self, ctx, member: discord.Member, *, reason=None):
         await ctx.guild.ban(member, reason=reason, delete_message_days=0)
         infraction_id = await self.db_infraction(member.id, ctx.author.id, ctx.guild.id, "ban", reason)
@@ -43,12 +40,13 @@ class Moderation(commands.Cog):
 
     @commands.command()
     @commands.guild_only()
+    @custom_checks.has_perms("staff")
     async def mute(self, ctx, member: discord.Member, time=None, *, reason=None):
-        sql = "SELECT mute_role_id FROM guild_settings WHERE guild_id = %s"
-        await self.bot.db.execute(sql, (ctx.guild.id,))
-        role = ctx.guild.get_role(int((await self.bot.db.fetchall())[0][0]))
-        if role is None:
-            return await ctx.send("There Is No Mute Role. Run `w!mod mutesetup` To Create One.")
+        sql = "SELECT setting_value FROM guild_settings WHERE guild_id = $1 AND setting_name = $2"
+        rows = await self.bot.db.fetch(sql, ctx.guild.id, "staff.mute_role_id")
+        role = ctx.guild.get_role(int(rows[0]["setting_value"]))
+        # if role is None:
+        #     raise commands.InvalidRoleSetting(ctx, "staff.role")
         await member.add_roles(role, reason="Staff Request Via Mute Command")
         infraction_id = await self.db_infraction(member.id, ctx.author.id, ctx.guild.id, "mute", reason)
         await self.log_action(title=f"{ctx.author.name}({ctx.author.id}) Muted {member.name}({member.id})",
@@ -61,11 +59,12 @@ class Moderation(commands.Cog):
 
     @commands.guild_only()
     @commands.command()
+    @custom_checks.has_perms("staff")
     async def unmute(self, ctx, member: discord.Member, *, reason=None):
         if member:
-            sql = "SELECT mute_role_id FROM guild_settings WHERE guild_id = %s"
-            await self.bot.db.execute(sql, (ctx.guild.id,))
-            role = ctx.guild.get_role(int((await self.bot.db.fetchall())[0][0]))
+            sql = "SELECT setting_value FROM guild_settings WHERE guild_id = $1 AND setting_name = $2"
+            role = await self.bot.db.fetch(sql, ctx.guild.id, "staff.mute_role_id")
+            role = ctx.guild.get_role(int(role[0]["setting_value"]))
             try:
                 await member.remove_roles(role, reason=f"Unmuted By {ctx.author.name}")
                 await self.log_action(title=f"{member.name}({member.id}) Was Unmuted",
@@ -80,9 +79,9 @@ class Moderation(commands.Cog):
         if guild is not None:
             member = guild.get_member(int(timer[2]))
             if member is not None:
-                sql = "SELECT mute_role_id FROM guild_settings WHERE guild_id = %s"
-                await self.bot.db.execute(sql, (guild.id,))
-                role = guild.get_role(int((await self.bot.db.fetchall())[0][0]))
+                sql = "SELECT setting_value FROM guild_settings WHERE guild_id = $1 AND setting_name = $2;"
+                role = await self.bot.db.fetch(sql, guild.id, "staff.mute_role_id")
+                role = guild.get_role(int(role[0]["setting_value"]))
                 try:
                     await member.remove_roles(role, reason="Temp-Mute Ended")
                     await self.log_action(title=f"{member.name}({member.id}) Was Unmuted",
@@ -93,6 +92,7 @@ class Moderation(commands.Cog):
 
     @commands.command()
     @commands.guild_only()
+    @custom_checks.has_perms("staff")
     async def kick(self, ctx, user: discord.Member, *, reason=None):
         await ctx.guild.kick(user, reason=reason)
         infraction_id = await self.db_infraction(user.id, ctx.author.id, ctx.guild.id, "kick", reason)
@@ -101,20 +101,21 @@ class Moderation(commands.Cog):
 
     @commands.command()
     @commands.guild_only()
+    @custom_checks.has_perms("staff")
     async def warn(self, ctx, user: discord.Member, *, reason):
         infraction_id = await self.db_infraction(user.id, ctx.author.id, ctx.guild.id, "warn", reason)
-        sql = f"SELECT count(infraction_id) " \
-              f"FROM infractions " \
-              f"WHERE userID='{user.id}' AND guildID='{ctx.guild.id}' AND type='warn';"
+        sql = """SELECT count(infraction_id) 
+              FROM infractions 
+              WHERE "userID"=$1 AND "guildID"=$2 AND type='warn';"""
 
-        await self.bot.db.execute(sql)
-        warning_count = (await self.bot.db.fetchall())[0][0]
+        warning_count = (await self.bot.db.fetch(sql, user.id, ctx.guild.id))[0]["count"]
 
         await self.log_action(title=f"{ctx.author.name}({ctx.author.id}) Warned {user.name}({user.id})",
                               reason=f"{reason}\nThis user now has **{warning_count}** Warns", infraction_id=infraction_id)
 
     @commands.command()
     @commands.guild_only()
+    @custom_checks.has_perms("staff")
     async def purge(self, ctx, amount, *, reason=None):
         await ctx.channel.purge(limit=int(amount) + 1)
         await self.log_action(title=f"{ctx.author.name}({ctx.author.id}) Purged {amount} Messages From {ctx.channel}",
@@ -122,6 +123,7 @@ class Moderation(commands.Cog):
 
     @commands.command()
     @commands.guild_only()
+    @custom_checks.has_perms("staff")
     async def userpurge(self, ctx, amount, user: discord.Member, *, reason=None):
         def from_user(message):
             return message.author == user
@@ -132,18 +134,19 @@ class Moderation(commands.Cog):
 
     @commands.group(invoke_without_command=True)
     @commands.guild_only()
+    @custom_checks.has_perms("staff")
     async def mod(self, ):
         pass
 
     @mod.command()
     @commands.guild_only()
+    @custom_checks.has_perms("staff")
     async def history(self, ctx, user: discord.Member):
-        sql = f"SELECT type, reason, infraction_id, datetime, prosecutorID " \
-              f"FROM infractions " \
-              f"WHERE userID='{user.id}' AND guildID='{ctx.guild.id}'"
+        sql = """SELECT type, reason, infraction_id, datetime, "prosecutorID" 
+              FROM infractions 
+              WHERE "userID"=$1 AND "guildID"=$2"""
 
-        await self.bot.db.execute(sql)
-        rows = (await self.bot.db.fetchall())
+        rows = (await self.bot.db.fetch(sql, user.id, ctx.guild.id))
 
         embed = discord.Embed(title=f"{user.name}'s Infraction History",
                               description=f"{user.name} has had {len(rows)} infractions on this server")
@@ -155,23 +158,23 @@ class Moderation(commands.Cog):
 
     @mod.command()
     @commands.guild_only()
+    @custom_checks.has_perms("staff")
     async def reason(self, ctx, infraction_id, *, reason):
-        sql = f"UPDATE infractions " \
-              f"SET reason = '{reason}' " \
-              f"WHERE infraction_id = {infraction_id} AND guildID = {ctx.guild.id}"
-        await self.bot.db.execute(sql)
-        await self.bot.db.execute()
+        sql = """UPDATE infractions 
+              SET reason = '$1' 
+              WHERE infraction_id = $2 AND "guildID" = $3"""
+        await self.bot.db.execute(sql, reason, infraction_id, ctx.guild.id)
         await self.log_action(f"Updated Reason For Infraction {infraction_id}", reason, infraction_id)
 
     @mod.command()
     @commands.guild_only()
+    @custom_checks.has_perms("staff")
     async def mutesetup(self, ctx, *, name=None):
-        sql = "SELECT mute_role_id " \
-              "FROM guild_settings " \
-              "WHERE guild_id = %s"
-        await self.bot.db.execute(sql, (ctx.guild.id,))
+        sql = """SELECT setting_value 
+              FROM guild_settings 
+              WHERE guild_id = $1 AND setting_name = $2"""
         try:
-            role_id = (await self.bot.db.fetchall())[0][0]
+            role_id = (await self.bot.db.fetch(sql, ctx.guild.id, "staff.mute_role_id"))[0]
             print(role_id)
             mutedRole = ctx.guild.get_role(int(role_id))
             muted_role_id = mutedRole.id
@@ -197,11 +200,12 @@ class Moderation(commands.Cog):
                 mutedRole = discord.utils.get(ctx.guild.roles, name="Muted")
                 muted_role_id = mutedRole.id
 
-            sql = "UPDATE guild_settings " \
-                  "SET mute_role_id = %s " \
-                  "WHERE guild_id = %s"
-            await self.bot.db.execute(sql, (muted_role_id, ctx.guild.id))
-            await self.bot.db.execute()
+            sql = """INSERT INTO guild_settings(guild_id, setting_name, setting_value) 
+                  VALUES ($1, $2, $3) 
+                  ON CONFLICT (guild_id, setting_name) DO UPDATE SET   
+                  setting_value = $4;"""
+            await self.bot.db.execute(sql, ctx.guild.id, "staff.mute_role_id", str(muted_role_id),
+                                      str(muted_role_id))
 
         if mutedRole > ctx.me.top_role:
             return await ctx.send("The Muted Role Is Above Mine! I Cant Edit It")

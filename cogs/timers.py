@@ -45,9 +45,8 @@ class Timers(commands.Cog):
         print("Started: Look for close timers")
         sql = "SELECT endtime, action, action_id, timer_id, guild_id " \
               "FROM timers " \
-              "WHERE endtime <= (NOW() + INTERVAL 30 MINUTE);"
-        await self.bot.db.execute(sql)
-        for row in await self.bot.db.fetchall():
+              "WHERE endtime <= (localtimestamp + INTERVAL '30 MINUTES');"
+        for row in await self.bot.db.fetch(sql):
             print(row)
             await self.dispatch_timers(row)
 
@@ -59,14 +58,12 @@ class Timers(commands.Cog):
         #           f"VALUES ('1', '000000000000000000', NOW() + INTERVAL {i * 10} SECOND, 678359965081141286)"
         #     await self.bot.db.execute(sql)
         # print("Commiting...")
-        # await self.bot.conn.commit()
         # print("added all rows")
 
     async def end_timer(self, timer):
         print("Timer Complete")
-        sql = "DELETE FROM timers WHERE timer_id = %s;"
-        await self.bot.db.execute(sql, (timer[3],))
-        await self.bot.conn.commit()
+        sql = "DELETE FROM timers WHERE timer_id = $1;"
+        await self.bot.db.execute(sql, timer[3])
         action_ids = {
             1: "tempmute",
             2: "tempban",
@@ -89,15 +86,12 @@ class Timers(commands.Cog):
         #         await self.bot.db.execute(sql)
         #         self.close_times.remove(row)
         #         print(f"Expired: {row[0]}")
-        # await self.bot.conn.commit()
 
     async def create_timer(self, endtime, action, action_id, guild_id):
         sql = f"""INSERT INTO timers (action, endtime, action_id, guild_id)
-        VALUES ({action}, %s, {action_id}, {guild_id});
+        VALUES ($1, $2, $3, $4) RETURNING timer_id;
 """
-        await self.bot.db.execute(sql, (endtime, ))
-        timer_id = self.bot.db.lastrowid
-        await self.bot.conn.commit()
+        timer_id = await self.bot.db.fetchval(sql, action, endtime, action_id, guild_id)
 
         if endtime - timedelta(minutes=CLOSE_TIMERS_IN_MINUTES) <= datetime.now():
             await self.dispatch_timers([endtime, action, action_id, timer_id, guild_id])

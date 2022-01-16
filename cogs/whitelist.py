@@ -21,8 +21,8 @@ class Whitelist(commands.Cog):
         if content.strip == "":
             return
         # Get Users Database Entry
-        await self.bot.db.execute("select whitelist from user_data where discord_user_id = %s", (str(ctx.author.id),))
-        is_present = await self.bot.db.fetchone()
+        sql = "select whitelist from user_data where discord_user_id = $1"
+        is_present = await self.bot.db.fetch(sql, ctx.author.id)
 
         if is_present is None:
             await global_functions.add_user_db_row(ctx.author)
@@ -38,9 +38,8 @@ class Whitelist(commands.Cog):
         # Else Add Them To The Whitelist And Update Database
         else:
             user_id = str(ctx.author.id)
-            sql = "UPDATE user_data SET whitelist=false WHERE discord_user_id=%s"
+            sql = "UPDATE user_data SET whitelist=false WHERE discord_user_id=$1"
             await self.bot.db.execute(sql, (user_id,))
-            await self.bot.db.commit()
             # MCClient.client.send_console_command(srv_id, "whitelist add " + content)
             await ctx.send(embed=await global_functions.create_embed(title="Success",
                                                                      description=

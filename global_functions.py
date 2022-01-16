@@ -8,7 +8,6 @@ async def add_user_db_row(member, bot):
                 "VALUES ('{}', {}, True, {});".format(member.name + "#" + member.discriminator,
                                                       member.id,
                                                       member.guild.id))
-    await bot.db.commit()
 
 
 async def create_embed(title, description, color=0x08D4D0):

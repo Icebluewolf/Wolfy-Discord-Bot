@@ -1,49 +1,71 @@
+from config import discordClient
 from discord.ext import commands
 
 
-async def has_role(setting: str, ctx: commands.Context):
-    setting = setting + "_role"
-    await commands.bot.db.exacute("""SELECT setting_value FROM guild_settings
-            WHERE guild_id=%s AND setting_name='bypass'""", (ctx.guild.id,))
-    row = await commands.bot.db.fetchone()
+# Checks If The User Has Permission To Use The Command And If It Is In An Approved Channel
+# Order of checks: Admin permission, Bypass Role, Channel, Role
+def has_perms(setting: str):
 
-    if row:
-        return commands.has_any_role(row.split(","))
-    else:
-        await commands.bot.db.exacute("""SELECT setting_value FROM guild_settings
-                WHERE guild_id=%s AND setting_name=%s;""", (ctx.guild.id, setting))
-        row = await commands.bot.db.fetchone()
+    async def has_bypass_role(ctx: commands.Context):
+        sql = """SELECT setting_value FROM guild_settings
+                WHERE guild_id=$1 AND setting_name='bypass.role'"""
+        row = await discordClient.db.fetch(sql, ctx.guild.id)
 
         if row:
-            return commands.has_any_role(row.split(","))
-        else:
-            return False
+            for i in row[0].split(","):
+                i = int(i)
+                try:
+                    await commands.has_any_role(i).predicate(ctx)
+                    return True
+                except commands.MissingAnyRole or commands.NoPrivateMessage:
+                    pass
+            else:
+                return False
 
+    async def has_role(setting: str, ctx: commands.Context):
 
-async def in_channel(setting: str, ctx: commands.Context):
-    setting = setting + "_channel"
-    await commands.bot.db.exacute("""SELECT setting_value FROM guild_settings
-            WHERE guild_id=%s AND setting_name=%s""", (ctx.guild.id, setting))
-    row = await commands.bot.db.fetchone()
+        setting = setting + ".role"
+        sql = """SELECT setting_value FROM guild_settings
+                WHERE guild_id=$1 AND setting_name=$2;"""
+        row = await discordClient.db.fetch(sql, ctx.guild.id, setting)
 
-    if row:
-        return str(ctx.channel.id) in row.split(",")
-    else:
-        return False
-
-
-# Checks If The User Has Permission To Use The Command And If It Is In An Approved Channel
-# Any Roles In "bypass_roles_id"(Defaulted to Admins) Bypass *ALL* Restrictions
-def has_perms(setting: str):
-    def predicate(ctx: commands.Context):
-        if commands.has_permissions(administrator=True):
-            return True
-        elif await has_role(setting, ctx):
-            if await in_channel(setting, ctx):
-                return True
+        if row:
+            for i in row[0].split(","):
+                i = int(i)
+                try:
+                    await commands.has_any_role(i).predicate(ctx)
+                    return True
+                except commands.MissingAnyRole or commands.NoPrivateMessage:
+                    pass
             else:
                 return False
         else:
             return False
+
+    async def in_channel(setting: str, ctx: commands.Context):
+        setting = setting + ".channel"
+        sql = """SELECT setting_value FROM guild_settings
+                WHERE guild_id=$1 AND setting_name=$2"""
+        row = await discordClient.db.fetch(sql, ctx.guild.id, setting)
+
+        if row:
+            return str(ctx.channel.id) in row[0].split(",")
+        else:
+            return False
+
+    async def predicate(ctx: commands.Context):
+        try:
+            if await commands.has_permissions(administrator=True).predicate(ctx):
+                return True
+        except commands.MissingPermissions:
+            if await has_bypass_role(ctx):
+                return True
+            elif await has_role(setting, ctx):
+                if await in_channel(setting, ctx):
+                    return True
+                else:
+                    return False
+            else:
+                return False
 
     return commands.check(predicate)
