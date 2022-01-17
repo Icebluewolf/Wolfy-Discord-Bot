@@ -1,48 +1,12 @@
 import discord
 import private
-# import aiomysql
 import asyncpg
 import asyncio
-from pydactyl import PterodactylClient
 from discord.ext import commands, tasks
-from typing import Union
 
 # Enable Intents
 intents = discord.Intents.default()
 intents.members = True
-# Set MC Pterodactyl Console Client
-MCClient = PterodactylClient("https://panel.primedhosting.com/", private.PH_API_KEY)
-
-
-# class temp_fix(aiomysql.Pool):
-#
-#     def __init__(self, minsize, maxsize, echo, pool_recycle, **kwargs):
-#         super(temp_fix, self).__init__(self, minsize, maxsize, echo, pool_recycle, **kwargs)
-#
-#     def release(self, conn):
-#         """Release free connection back to the connection pool.
-#         This is **NOT** a coroutine.
-#         """
-#         fut = self._loop.create_future()
-#         fut.set_result(None)
-#
-#         if conn in self._terminated:
-#             assert conn.closed, conn
-#             self._terminated.remove(conn)
-#             return fut
-#         # assert conn in self._used, (conn, self._used)
-#         self._used.remove(conn)
-#         if not conn.closed:
-#             in_trans = conn.get_transaction_status()
-#             if in_trans:
-#                 conn.close()
-#                 return fut
-#             if self._closing:
-#                 conn.close()
-#             else:
-#                 self._free.append(conn)
-#             fut = self._loop.create_task(self._wakeup())
-#         return fut
 
 
 class Database:
@@ -116,7 +80,3 @@ class DBKeepAlive(commands.Cog):
     async def db_ping(self):
         # set default DB.
         await self.bot.db.execute(f"USE {private.DB_name};")
-
-
-# Set Up Vars
-srv_id = "bf9213e8"

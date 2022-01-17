@@ -111,7 +111,8 @@ class Moderation(commands.Cog):
         warning_count = (await self.bot.db.fetch(sql, user.id, ctx.guild.id))[0]["count"]
 
         await self.log_action(title=f"{ctx.author.name}({ctx.author.id}) Warned {user.name}({user.id})",
-                              reason=f"{reason}\nThis user now has **{warning_count}** Warns", infraction_id=infraction_id)
+                              reason=f"{reason}\nThis user now has **{warning_count}** Warns",
+                              infraction_id=infraction_id)
 
     @commands.command()
     @commands.guild_only()
@@ -129,7 +130,8 @@ class Moderation(commands.Cog):
             return message.author == user
 
         await ctx.channel.purge(limit=int(amount) + 1, check=from_user)
-        await self.log_action(title=f"{ctx.author.name}({ctx.author.id}) Purged {amount} Of {user.name}({user.id})'s Messages In {ctx.channel}",
+        await self.log_action(title=f"""{ctx.author.name}({ctx.author.id}) Purged {amount} Of {user.name}({user.id})'s 
+                                        Messages In {ctx.channel}""",
                               reason=reason, infraction_id="N/A")
 
     @commands.group(invoke_without_command=True)
@@ -176,29 +178,27 @@ class Moderation(commands.Cog):
         try:
             role_id = (await self.bot.db.fetch(sql, ctx.guild.id, "staff.mute_role_id"))[0]
             print(role_id)
-            mutedRole = ctx.guild.get_role(int(role_id))
-            muted_role_id = mutedRole.id
-            print(mutedRole)
+            muted_role = ctx.guild.get_role(int(role_id))
+            print(muted_role)
         except (IndexError, AttributeError):
-            mutedRole = None
+            muted_role = None
 
-        if mutedRole is None:
+        if muted_role is None:
             if name:
                 await ctx.guild.create_role(name=name, permissions=discord.Permissions(send_messages=False,
                                                                                        add_reactions=False,
                                                                                        change_nickname=False,
                                                                                        speak=False,
                                                                                        stream=False,))
-                mutedRole = discord.utils.get(ctx.guild.roles, name=name)
-                muted_role_id = mutedRole.id
+                muted_role = discord.utils.get(ctx.guild.roles, name=name)
             else:
                 await ctx.guild.create_role(name="Muted", permissions=discord.Permissions(send_messages=False,
                                                                                           add_reactions=False,
                                                                                           change_nickname=False,
                                                                                           speak=False,
                                                                                           stream=False,))
-                mutedRole = discord.utils.get(ctx.guild.roles, name="Muted")
-                muted_role_id = mutedRole.id
+                muted_role = discord.utils.get(ctx.guild.roles, name="Muted")
+            muted_role_id = muted_role.id
 
             sql = """INSERT INTO guild_settings(guild_id, setting_name, setting_value) 
                   VALUES ($1, $2, $3) 
@@ -207,22 +207,21 @@ class Moderation(commands.Cog):
             await self.bot.db.execute(sql, ctx.guild.id, "staff.mute_role_id", str(muted_role_id),
                                       str(muted_role_id))
 
-        if mutedRole > ctx.me.top_role:
+        if muted_role > ctx.me.top_role:
             return await ctx.send("The Muted Role Is Above Mine! I Cant Edit It")
 
         success_list = ""
         fail_list = ""
         for channel in ctx.guild.text_channels:
-            perms = channel.overwrites_for(mutedRole)
             try:
-                await channel.set_permissions(mutedRole, send_messages=False)
+                await channel.set_permissions(muted_role, send_messages=False)
                 success_list += f"{channel.mention} "
             except discord.HTTPException:
                 fail_list += f"{channel.mention} "
 
         embed = discord.Embed(title="Muted Role Created/Updated",
-                              description="There May Have Been Some Channels That I Was Not Able To Add The Muted Role To. "
-                                          "Give Me A Permission To Access All Channels To Fix This.")
+                              description="There May Have Been Some Channels That I Was Not Able To Add The "
+                                          "Muted Role To. Give Me A Permission To Access All Channels To Fix This.")
         embed.add_field(name="Successful: ", value=success_list or "None")
         embed.add_field(name="Unsuccessful: ", value=fail_list or "None")
         await ctx.send(embed=embed)

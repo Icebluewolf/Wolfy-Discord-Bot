@@ -1,5 +1,4 @@
 import discord
-import os
 from config import discordClient
 import private
 import global_functions
@@ -41,8 +40,8 @@ def main_code():
 
         await ctx.message.delete()
         await ctx.send(embed=await global_functions.create_embed(title="",
-                                                                 description=
-                                                                 f"Pong :ping_pong:\nPing : `{discordClient.latency}`"),
+                                                                 description=f"Pong :ping_pong:\nPing : "
+                                                                             f"`{discordClient.latency}`"),
                        delete_after=30)
 
     class Counter(discord.ui.View):
@@ -59,7 +58,6 @@ def main_code():
 
     class Dropdown(discord.ui.Select):
         def __init__(self):
-
 
             options = [
                 discord.SelectOption(label='Red', description='Your favourite colour is red', emoji='🟥'),
@@ -118,9 +116,9 @@ def main_code():
             await global_functions.add_user_db_row(member, bot)
 
     # Run The Bot And Load Cogs
-    COGS = ["cogs.guild_settings", "cogs.timers", "cogs.reaction_roles", "cogs.poll", "cogs.moderation",
+    cogs = ["cogs.guild_settings", "cogs.timers", "cogs.reaction_roles", "cogs.poll", "cogs.moderation",
             "cogs.error_handler"]
-    for cog in COGS:
+    for cog in cogs:
         discordClient.load_extension(cog)
 
     discordClient.load_extension('jishaku')

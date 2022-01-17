@@ -1,17 +1,17 @@
 # Wolfy - Discord Bot
+## Discord Support Server : [Invite](https://discord.gg/f39cJ9D)
 ## Welcome To The GitHub For Wolfy Discord Bot.
 This Is A Personal Discord Bot Created With Python To Preform Some Tasks On My Discord Server.
 I Am Now Trying To Allow The Public To Use This Bot.
 
-#### Version : 0.2.0
-Note : I relaunched the release of the bot so the versions reset to 0.0.0
+## Version : 0.3.0
 
 ### Table Of Contents
 - [Introduction](#introduction)
 - [Polls](#polls)
 - [Whitelisting](#whitelisting)
 - [Custom Settings](#custom-Settings)
-- [Reaction Roles](#announcements)
+- [Reaction Roles](#reaction-roles)
 
 
 ## Introduction
@@ -33,6 +33,14 @@ Mintyfree<br>
 Please Only Contact Ice Wolfy#5283 With Issues Unless Otherwise Told.
 
 
+## Moderation
+You Can Now Use Wolfy For Moderation! Wolfy Offers A Complete Moderation System.
+This Includes Basic Moderation Like A Ban Command. It Also Offers More Advanced
+Moderation Such As Timed Mutes, Bans, And Even Warnings. It Is Possible To Add A Reason While
+Running A Moderation Command Or Afterwards. Wolfy Will Automatically Send Messages 
+To A Configured Channel Every Time A Wolfy Moderation Command Is Used. You Can Also
+List All Of A Users Punishments.
+
 
 ## Polls
 This Feature Is For Getting The Input Of Others.<br>
@@ -46,7 +54,7 @@ There Is A Limit Of 20 Options In The Poll Because Of Discords Limit Of 20 React
 
 ## Reaction Roles
 This will help your server not rely on staff to give out roles.
-This can be used to set up an announcement role that users can opt in for so you dont have to ping @everyone. 
+This can be used to set up an announcement role that users can opt in for, so you dont have to ping @everyone. 
 If you want to know what games your users are interested in put up a few reactions roles with the top games.
 When users click the reaction they will get the specified role. When the remove the reaction there role will be removed!
 The format for this command is `w!rr <add|remove> <emoji> <message_id> <role_id> [channel_id, for add only]`.

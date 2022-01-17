@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 import discord
 import asyncio
-from config import discordClient
 from discord.ext import tasks, commands
 
 

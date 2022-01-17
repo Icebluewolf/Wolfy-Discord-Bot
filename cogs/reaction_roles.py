@@ -36,7 +36,8 @@ class ReactionRoles(commands.Cog):
             if len(role_id) != 18 or not role_id.isdigit():
                 if channel_id is not None:
                     if len(channel_id) != 18 or not channel_id.isdigit():
-                        await ctx.send("Make sure to follow the format `w!rr add <emoji> <message_id> <role_id> [channel_id]")
+                        await ctx.send("Make sure to follow the format `w!rr add <emoji> <message_id> <role_id> "
+                                       "[channel_id]")
                         return
 
         sql = f"INSERT INTO reaction_roles (message_id , emoji_id, guild_id, role_id, channel_id) " \
@@ -56,10 +57,11 @@ class ReactionRoles(commands.Cog):
                     await ctx.send("I Could Not Find That Emoji")
             except discord.NotFound:
                 await ctx.send(
-                    "I Couldnt Find That Message. Make Sure The Message Is In This Channel And It Is A Valid Message ID: `w!rr id`\n"
+                    "I Could Not Find That Message. Make Sure The Message Is In This Channel And It Is A Valid Message "
+                    "ID: `w!rr id`\n"
                     "If The Message Is Not In This Channel Add The Channel ID After The Role ID In The Command.")
         except discord.NotFound:
-            await ctx.send("I Couldent Find The Channel You Wanted")
+            await ctx.send("I Could Not Find The Channel You Wanted")
 
     @rr.command()
     @custom_checks.has_perms("rr")
@@ -116,7 +118,8 @@ class ReactionRoles(commands.Cog):
                 role = "Not Found"
             else:
                 role = role.mention
-            rr_string = f"{rr_string}» [Message](https://discordapp.com/channels/{ctx.guild.id}/{row[3]}/{row[1]}) | Emoji : {emoji} | Role: {role}\n"
+            rr_string = f"{rr_string}» [Message](https://discordapp.com/channels/{ctx.guild.id}/{row[3]}/{row[1]}) " \
+                        f"| Emoji : {emoji} | Role: {role}\n"
         embed = discord.Embed(title=f"{ctx.guild.name}'s Reaction Roles",
                               description=rr_string,
                               type="rich",)
@@ -173,8 +176,8 @@ class ReactionRoles(commands.Cog):
         await ctx.message.delete()
         if isinstance(error, commands.CheckFailure):
             await ctx.send(embed=await global_functions.create_embed(title="fail",
-                                                                     description=
-                                                                     "You Do Not Have Permission To Preform That Command"))
+                                                                     description="You Do Not Have Permission To "
+                                                                                 "Preform That Command"))
 
 
 def setup(client):
