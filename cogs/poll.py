@@ -124,7 +124,6 @@ class Poll(commands.Cog):
 
     @poll.error
     async def whitelist_error(self, ctx, error):
-        print(f"Poll Error: {error}")
         await ctx.message.delete()
         if isinstance(error, commands.CheckFailure):
             await ctx.send(embed=await global_functions.create_embed(title="fail",

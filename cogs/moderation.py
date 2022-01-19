@@ -9,7 +9,7 @@ class Moderation(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    async def log_action(self, title, reason, infraction_id):
+    async def log_action(self, ctx, title, reason, infraction_id):
         if infraction_id:
             description = f"Reason: {reason or f'No Reason Provided. Use `w!reason {infraction_id}` To Add One'}\n"
             f"Log ID: {infraction_id}"
@@ -18,7 +18,13 @@ class Moderation(commands.Cog):
         embed = discord.Embed(title=title,
                               description=description,
                               timestamp=datetime.utcnow())
-        channel = self.bot.get_channel(821404230601408522)
+        c_id = await self.bot.db.fetchval("""
+        SELECT setting_value FROM guild_settings WHERE guild_id = $1 AND setting_name = $2;
+        """, ctx.guild.id, "staff.log_channel")
+        print(c_id)
+        channel = self.bot.get_channel(c_id)
+        if channel is None:
+            channel = await self.bot.fetch_channel(c_id)
         await channel.send(embed=embed)
 
     async def db_infraction(self, user_id, prosecutor_id, guild_id, infraction_type, reason=None):
@@ -35,8 +41,8 @@ class Moderation(commands.Cog):
     async def ban(self, ctx, member: discord.Member, *, reason=None):
         await ctx.guild.ban(member, reason=reason, delete_message_days=0)
         infraction_id = await self.db_infraction(member.id, ctx.author.id, ctx.guild.id, "ban", reason)
-        await self.log_action(title=f"{ctx.author.name}({ctx.author.id}) Banned {member.name}({member.id})",
-                                    reason=reason, infraction_id=infraction_id)
+        await self.log_action(ctx, title=f"{ctx.author.name}({ctx.author.id}) Banned {member.name}({member.id})",
+                              reason=reason, infraction_id=infraction_id)
 
     @commands.command()
     @commands.guild_only()
@@ -49,8 +55,8 @@ class Moderation(commands.Cog):
         #     raise commands.InvalidRoleSetting(ctx, "staff.role")
         await member.add_roles(role, reason="Staff Request Via Mute Command")
         infraction_id = await self.db_infraction(member.id, ctx.author.id, ctx.guild.id, "mute", reason)
-        await self.log_action(title=f"{ctx.author.name}({ctx.author.id}) Muted {member.name}({member.id})",
-                                    reason=reason, infraction_id=infraction_id)
+        await self.log_action(ctx, title=f"{ctx.author.name}({ctx.author.id}) Muted {member.name}({member.id})",
+                              reason=reason, infraction_id=infraction_id)
         if time:
             timers = self.bot.get_cog("Timers")
             time = await timers.format_time(time)
@@ -67,14 +73,14 @@ class Moderation(commands.Cog):
             role = ctx.guild.get_role(int(role[0]["setting_value"]))
             try:
                 await member.remove_roles(role, reason=f"Unmuted By {ctx.author.name}")
-                await self.log_action(title=f"{member.name}({member.id}) Was Unmuted",
+                await self.log_action(ctx, title=f"{member.name}({member.id}) Was Unmuted",
                                       reason=reason or f"Manually Unmuted By {ctx.author.name}",
                                       infraction_id=None)
             except discord.Forbidden:
-                print("Forbidden")
+                pass
 
     @commands.Cog.listener()
-    async def on_tempmute_timer_complete(self, timer):
+    async def on_tempmute_timer_complete(self, ctx, timer):
         guild = self.bot.get_guild(int(timer[4]))
         if guild is not None:
             member = guild.get_member(int(timer[2]))
@@ -84,11 +90,11 @@ class Moderation(commands.Cog):
                 role = guild.get_role(int(role[0]["setting_value"]))
                 try:
                     await member.remove_roles(role, reason="Temp-Mute Ended")
-                    await self.log_action(title=f"{member.name}({member.id}) Was Unmuted",
+                    await self.log_action(ctx, title=f"{member.name}({member.id}) Was Unmuted",
                                           reason="Automatically Unmuted After Tempmute Completed",
                                           infraction_id=None)
                 except discord.Forbidden:
-                    print("Forbidden")
+                    pass
 
     @commands.command()
     @commands.guild_only()
@@ -96,8 +102,8 @@ class Moderation(commands.Cog):
     async def kick(self, ctx, user: discord.Member, *, reason=None):
         await ctx.guild.kick(user, reason=reason)
         infraction_id = await self.db_infraction(user.id, ctx.author.id, ctx.guild.id, "kick", reason)
-        await self.log_action(title=f"{ctx.author.name}({ctx.author.id}) Kicked {user.name}({user.id})",
-                                    reason=reason, infraction_id=infraction_id)
+        await self.log_action(ctx, title=f"{ctx.author.name}({ctx.author.id}) Kicked {user.name}({user.id})",
+                              reason=reason, infraction_id=infraction_id)
 
     @commands.command()
     @commands.guild_only()
@@ -110,7 +116,7 @@ class Moderation(commands.Cog):
 
         warning_count = (await self.bot.db.fetch(sql, user.id, ctx.guild.id))[0]["count"]
 
-        await self.log_action(title=f"{ctx.author.name}({ctx.author.id}) Warned {user.name}({user.id})",
+        await self.log_action(ctx, title=f"{ctx.author.name}({ctx.author.id}) Warned {user.name}({user.id})",
                               reason=f"{reason}\nThis user now has **{warning_count}** Warns",
                               infraction_id=infraction_id)
 
@@ -119,7 +125,8 @@ class Moderation(commands.Cog):
     @custom_checks.has_perms("staff")
     async def purge(self, ctx, amount, *, reason=None):
         await ctx.channel.purge(limit=int(amount) + 1)
-        await self.log_action(title=f"{ctx.author.name}({ctx.author.id}) Purged {amount} Messages From {ctx.channel}",
+        await self.log_action(ctx, title=f"{ctx.author.name}({ctx.author.id}) Purged {amount} Messages From "
+                                         f"{ctx.channel}",
                               reason=reason, infraction_id="N/A")
 
     @commands.command()
@@ -130,8 +137,8 @@ class Moderation(commands.Cog):
             return message.author == user
 
         await ctx.channel.purge(limit=int(amount) + 1, check=from_user)
-        await self.log_action(title=f"""{ctx.author.name}({ctx.author.id}) Purged {amount} Of {user.name}({user.id})'s 
-                                        Messages In {ctx.channel}""",
+        await self.log_action(ctx, title=f"""{ctx.author.name}({ctx.author.id}) Purged {amount} Of {user.name}
+                                             ({user.id})'s Messages In {ctx.channel}""",
                               reason=reason, infraction_id="N/A")
 
     @commands.group(invoke_without_command=True)
@@ -166,7 +173,7 @@ class Moderation(commands.Cog):
               SET reason = '$1' 
               WHERE infraction_id = $2 AND "guildID" = $3"""
         await self.bot.db.execute(sql, reason, infraction_id, ctx.guild.id)
-        await self.log_action(f"Updated Reason For Infraction {infraction_id}", reason, infraction_id)
+        await self.log_action(ctx, f"Updated Reason For Infraction {infraction_id}", reason, infraction_id)
 
     @mod.command()
     @commands.guild_only()
@@ -177,9 +184,7 @@ class Moderation(commands.Cog):
               WHERE guild_id = $1 AND setting_name = $2"""
         try:
             role_id = (await self.bot.db.fetch(sql, ctx.guild.id, "staff.mute_role_id"))[0]
-            print(role_id)
             muted_role = ctx.guild.get_role(int(role_id))
-            print(muted_role)
         except (IndexError, AttributeError):
             muted_role = None
 

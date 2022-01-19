@@ -172,7 +172,6 @@ class ReactionRoles(commands.Cog):
     @id.error
     @list.error
     async def rr_error(self, ctx, error):
-        print(f"RR Error: {error}")
         await ctx.message.delete()
         if isinstance(error, commands.CheckFailure):
             await ctx.send(embed=await global_functions.create_embed(title="fail",

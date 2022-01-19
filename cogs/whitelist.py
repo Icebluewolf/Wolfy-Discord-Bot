@@ -49,7 +49,6 @@ class Whitelist(commands.Cog):
 
     @whitelist.error
     async def whitelist_error(self, ctx, error):
-        print(f"Whitelist Error: {error}")
         await ctx.message.delete()
         if isinstance(error, commands.MissingRequiredArgument):
             # If The User Did Not Specify An Argument

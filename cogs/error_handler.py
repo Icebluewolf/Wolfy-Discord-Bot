@@ -1,5 +1,6 @@
 import traceback
 import discord
+from config import discordClient
 from discord.ext import commands
 
 
@@ -10,7 +11,6 @@ class CommandErrorHandler(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
-        print("handeling error")
         # This prevents any commands with local handlers being handled here in on_command_error.
         if hasattr(ctx.command, 'on_error'):
             return
@@ -41,9 +41,23 @@ class CommandErrorHandler(commands.Cog):
                 pass
 
         else:
-            # All other Errors not returned come here. And we can just print the default TraceBack.
-            await ctx.send(f"""There Was An Error. You Have Permission To Spam Ping Wolfy About It.\nError: \n```
-{"".join(traceback.format_exception(type(error), error, error.__traceback__))}```""")
+            # Send To Bug Report Channel If Main Bot
+            if discordClient.user.id == 714954765368295486:
+                # All other Errors not returned come here
+                await ctx.send(f"""There Was An Error. Join The Support Server For Help: https://discord.gg/f39cJ9D""")
+                # For Reporting Bugs To The Support Server, By Sending The Traceback
+                channel = discordClient.get_channel(933351512665632820)
+                if channel is None:
+                    channel = await discordClient.fetch_channel(933351512665632820)
+                await channel.send(
+                    f"""There Was An Error. <@!451848182327148554>\nError: \n```
+                    {"".join(traceback.format_exception(type(error), error, error.__traceback__))}```"""
+                )
+            # Send To User If Test Bot
+            else:
+                # All other Errors not returned come here. And we can just print the default TraceBack.
+                await ctx.send(f"""Error: \n```
+                               {"".join(traceback.format_exception(type(error), error, error.__traceback__))}```""")
 
 
 def setup(client):

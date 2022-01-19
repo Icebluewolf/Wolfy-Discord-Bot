@@ -1,3 +1,4 @@
+import re
 from discord.ext import commands
 from constants import SETTINGS
 
@@ -88,7 +89,7 @@ class GuildSettings(commands.Cog):
                     # setting_type = SETTINGS[setting[0]][setting[1]]['type']
                     # if not exec(f"GuildSettings.is_{setting_type}({ctx}, {value})"):
                     #     return await ctx.send("That Value Did Not Match The Type Of That Setting")
-                    value = ascii(value)
+                    value = re.sub("[^0-9]", "", ascii(value))
                     await self.bot.db.execute("""
                     INSERT INTO guild_settings (guild_id, setting_name, setting_value)
                     VALUES ($1, $2, $3)

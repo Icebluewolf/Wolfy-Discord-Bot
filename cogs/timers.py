@@ -33,7 +33,6 @@ class Timers(commands.Cog):
                 else:
                     return None
                 amount = ""
-        print(future_time)
         return future_time
 
     def cog_unload(self):
@@ -41,12 +40,10 @@ class Timers(commands.Cog):
 
     @tasks.loop(minutes=CLOSE_TIMERS_IN_MINUTES)
     async def look_for_close_times(self):
-        print("Started: Look for close timers")
         sql = "SELECT endtime, action, action_id, timer_id, guild_id " \
               "FROM timers " \
               "WHERE endtime <= (localtimestamp + INTERVAL '30 MINUTES');"
         for row in await self.bot.db.fetch(sql):
-            print(row)
             await self.dispatch_timers(row)
 
     @look_for_close_times.before_loop
@@ -60,7 +57,6 @@ class Timers(commands.Cog):
         # print("added all rows")
 
     async def end_timer(self, timer):
-        print("Timer Complete")
         sql = "DELETE FROM timers WHERE timer_id = $1;"
         await self.bot.db.execute(sql, timer[3])
         action_ids = {
@@ -75,7 +71,6 @@ class Timers(commands.Cog):
 
         if timer[0] > now:
             sleep_time = (timer[0] - now).total_seconds()
-            print("sleeping")
             await asyncio.sleep(sleep_time)
 
         await self.end_timer(timer)
