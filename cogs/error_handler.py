@@ -10,7 +10,7 @@ class CommandErrorHandler(discord.Cog):
         self.bot = bot
 
     @discord.Cog.listener()
-    async def on_command_error(self, ctx, error):
+    async def on_application_command_error(self, ctx, error):
         # This prevents any commands with local handlers being handled here in on_command_error.
         if hasattr(ctx.command, 'on_error'):
             return
