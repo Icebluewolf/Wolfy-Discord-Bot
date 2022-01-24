@@ -3,24 +3,31 @@ import custom_checks
 import global_functions
 from discord.ext import commands
 from config import discordClient
+from discord.commands import SlashCommandGroup, Option
 
 
 class ReactionRoles(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.group(invoke_without_command=True, aliases=["reactionroles", "reaction roles", ], )
-    @custom_checks.has_perms("rr")
-    async def rr(self, ctx):
-        await ctx.send("reaction roles")
+    rr = SlashCommandGroup("reactionroles", "To Handle The Reaction Role Commands. But Probably Not Useful Now")
 
-    @rr.command()
+    # @custom_checks.has_perms("rr")
+    # async def rr(self, ctx):
+    #     await ctx.respond("reaction roles")
+
+    @rr.command(description="Add A Reaction That Is Linked To A Role To A Message")
     @custom_checks.has_perms("rr")
-    async def add(self, ctx, emoji, message_id, role_id, channel_id=None):
-        # if len(emoji) != 1:
-        #     emoji_id = emoji[-19:-1]
-        # else:
-        #     emoji_id = emoji
+    async def add(self, ctx,
+                  emoji: Option(str, description="The Emoji To Use In The Reaction"),
+                  message_id: Option(str, description="The ID Of The Message To Add The Reaction To"),
+                  role_id: Option(discord.Role, description="The Role To Link With The Reaction"),
+                  channel_id: Option(discord.TextChannel,
+                                     description="If The Message Is Not In This Channel Give The Channel ID",
+                                     required=False)):
+
+        if not message_id.isnumeric():
+            return await ctx.respond("Your Message Id Is Invalid. See `/reactionroles id`")
 
         try:
             emoji_id = await commands.PartialEmojiConverter().convert(ctx=ctx, argument=emoji)
@@ -30,15 +37,6 @@ class ReactionRoles(commands.Cog):
 
         if channel_id is None:
             channel_id = ctx.channel.id
-
-        # if len(emoji_id) != 1 and (len(emoji_id) != 18 or not emoji_id.isdigit()):
-        if len(message_id) != 18 or not message_id.isdigit():
-            if len(role_id) != 18 or not role_id.isdigit():
-                if channel_id is not None:
-                    if len(channel_id) != 18 or not channel_id.isdigit():
-                        await ctx.send("Make sure to follow the format `w!rr add <emoji> <message_id> <role_id> "
-                                       "[channel_id]")
-                        return
 
         sql = f"INSERT INTO reaction_roles (message_id , emoji_id, guild_id, role_id, channel_id) " \
               f"VALUES ($1, $2, $3, $4, $5)"
@@ -50,26 +48,27 @@ class ReactionRoles(commands.Cog):
                 try:
                     await message.add_reaction(emoji)
                     await self.bot.db.execute(sql, message_id, emoji_id, ctx.guild.id, role_id, channel_id)
-                    await ctx.send("The Reaction Role Was Added!")
+                    await ctx.respond("The Reaction Role Was Added!")
                 except discord.Forbidden:
-                    await ctx.send("I Dont Have Permission To Add Reactions Here")
+                    await ctx.respond("I Dont Have Permission To Add Reactions Here")
                 except discord.HTTPException:
-                    await ctx.send("I Could Not Find That Emoji")
+                    await ctx.respond("I Could Not Find That Emoji")
             except discord.NotFound:
-                await ctx.send(
+                await ctx.respond(
                     "I Could Not Find That Message. Make Sure The Message Is In This Channel And It Is A Valid Message "
-                    "ID: `w!rr id`\n"
+                    "ID: `/rr id`\n"
                     "If The Message Is Not In This Channel Add The Channel ID After The Role ID In The Command.")
         except discord.NotFound:
-            await ctx.send("I Could Not Find The Channel You Wanted")
+            await ctx.respond("I Could Not Find The Channel You Wanted")
 
-    @rr.command()
+    @rr.command(description="Removes A Reaction Role From A Message")
     @custom_checks.has_perms("rr")
-    async def remove(self, ctx, emoji, message_id):
-        # if len(emoji) != 1 and (len(emoji) != 18 or emoji.isdigit()):
-        if len(message_id) != 18 or not message_id.isdigit():
-            await ctx.send("Make sure to follow the format `w!rr remove <emoji> <message_id>")
-            return
+    async def remove(self, ctx,
+                     emoji: Option(str, description="The Emoji Of The Reaction Role To Be Removed"),
+                     message_id: Option(str, description="The ID Of The Message To Remove The Reaction From")):
+
+        if not message_id.isnumeric():
+            return await ctx.respond("Your Message Id Is Invalid. See `/reactionroles id`")
 
         try:
             emoji_id = await commands.PartialEmojiConverter().convert(ctx=ctx, argument=emoji)
@@ -85,23 +84,21 @@ class ReactionRoles(commands.Cog):
             await self.bot.db.execute(sql, message_id, emoji_id)
 
             if await self.bot.db.rowcount == 0:
-                await ctx.send("That Is Not A Reaction Role Message/Emoji")
+                await ctx.respond("That Is Not A Reaction Role Message/Emoji")
             else:
-                await ctx.send("Successfully Deleted The Reaction Role")
+                await ctx.respond("Successfully Deleted The Reaction Role")
         except discord.HTTPException:
-            await ctx.send("That Is Not A Valid Emoji")
+            await ctx.respond("That Is Not A Valid Emoji")
 
-    @rr.command()
+    @rr.command(description="Shows An Image Of How To Get A Discord ID")
     @custom_checks.has_perms("rr")
     async def id(self, ctx):
-        await ctx.message.delete()
         image = discord.File("images/discord_id.jpg")
-        await ctx.send(file=image)
+        await ctx.respond(file=image)
 
-    @rr.command(aliases=["show", ])
+    @rr.command(description="Shows All Of The Reactions Roles In Your Guild")
     @custom_checks.has_perms("rr")
     async def list(self, ctx):
-        await ctx.message.delete()
         sql = f"SELECT emoji_id, message_id, role_id, channel_id FROM reaction_roles " \
             f"WHERE guild_id=$1"
         rr_list = await self.bot.db.fetch(sql, ctx.guild.id)
@@ -123,9 +120,9 @@ class ReactionRoles(commands.Cog):
         embed = discord.Embed(title=f"{ctx.guild.name}'s Reaction Roles",
                               description=rr_string,
                               type="rich",)
-        await ctx.send(embed=embed)
+        await ctx.respond(embed=embed)
 
-    @commands.Cog.listener('on_raw_reaction_add')
+    @discord.Cog.listener('on_raw_reaction_add')
     async def reaction_add_listener(self, payload):
         if payload.emoji.is_custom_emoji():
             emoji = payload.emoji.id
@@ -140,11 +137,11 @@ class ReactionRoles(commands.Cog):
                 await payload.member.add_roles(discord.Object(int(role[0])), reason="Reaction Roles")
             except discord.Forbidden:
                 try:
-                    await payload.channel.send(f"I Dont Have permission To Add Roles To {payload.member.name}")
+                    await payload.channel.respond(f"I Dont Have permission To Add Roles To {payload.member.name}")
                 except discord.Forbidden:
                     pass
 
-    @commands.Cog.listener('on_raw_reaction_remove')
+    @discord.Cog.listener('on_raw_reaction_remove')
     async def reaction_remove_listener(self, payload):
         if payload.emoji.is_custom_emoji():
             emoji = payload.emoji.id
@@ -162,7 +159,7 @@ class ReactionRoles(commands.Cog):
                 await member.remove_roles(discord.Object(int(role[0])), reason="Reaction Roles")
             except discord.Forbidden:
                 try:
-                    await payload.send(f"I Dont Have permission To Remove Roles From {payload.member.name}")
+                    await payload.respond(f"I Dont Have permission To Remove Roles From {payload.member.name}")
                 except discord.Forbidden:
                     pass
 
@@ -172,9 +169,8 @@ class ReactionRoles(commands.Cog):
     @id.error
     @list.error
     async def rr_error(self, ctx, error):
-        await ctx.message.delete()
         if isinstance(error, commands.CheckFailure):
-            await ctx.send(embed=await global_functions.create_embed(title="fail",
+            await ctx.respond(embed=await global_functions.create_embed(title="fail",
                                                                      description="You Do Not Have Permission To "
                                                                                  "Preform That Command"))
 

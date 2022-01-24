@@ -1,9 +1,18 @@
 import re
+import discord
 from discord.ext import commands
+from discord.commands import slash_command, Option
 from constants import SETTINGS
 
+choices = [x for x in SETTINGS.keys() if x != "description"]
+for y in SETTINGS.keys():
+    if y != "description":
+        for x in SETTINGS[y].keys():
+            if x != "description":
+                choices.append(f"{y}.{x}")
 
-class GuildSettings(commands.Cog):
+
+class GuildSettings(discord.Cog):
     def __init__(self, bot):
         self.bot = bot
     #
@@ -25,12 +34,13 @@ class GuildSettings(commands.Cog):
     #     except ValueError:
     #         return False
 
-    @commands.command()
+    @slash_command()
     @commands.has_permissions(administrator=True)
-    async def settings(self, ctx, setting=None):
+    async def settings(self, ctx,
+                       setting: Option(str, "The Setting You Want To Learn More About", required=False,
+                                       choices=choices)):
         """
         Allows Server Admins To View The Settings Of The Bot
-        Usage: `w!settings [setting]`
         """
 
         # async def get_role_name(column):
@@ -56,30 +66,31 @@ class GuildSettings(commands.Cog):
                 try:
                     if setting[1] in SETTINGS[setting[0]].keys():
                         msg = f"Description: {SETTINGS[setting[0]][setting[1]]['description']}\n"
-                        await ctx.send(msg)
-                        # await ctx.send(msg + '\n'.join(SETTINGS[1][setting[0]][1][setting[1]]))
+                        await ctx.respond(msg)
+                        # await ctx.respond(msg + '\n'.join(SETTINGS[1][setting[0]][1][setting[1]]))
                     else:
-                        await ctx.send(f"I could Not Find The `{setting[1]}` Setting In The `{setting[0]}` Group")
+                        await ctx.respond(f"I could Not Find The `{setting[1]}` Setting In The `{setting[0]}` Group")
                 except IndexError:
                     msg = f"Description: {SETTINGS[setting[0]]['description']}\n"
                     cmds = list(SETTINGS[setting[0]].keys())
                     cmds.remove("description")
-                    await ctx.send(msg + '\n'.join(cmds))
+                    await ctx.respond(msg + '\n'.join(cmds))
             else:
-                await ctx.send(f"I Could Not Find The `{setting[0]}` Group")
+                await ctx.respond(f"I Could Not Find The `{setting[0]}` Group")
         else:
             msg = f"Description: {SETTINGS['description']}\n"
             groups = list(SETTINGS.keys())
             groups.remove("description")
             msg = msg + '\n'.join(groups)
-            await ctx.send(msg)
+            await ctx.respond(msg)
 
-    @commands.command()
+    @slash_command()
     @commands.has_permissions(administrator=True)
-    async def set(self, ctx, setting, *, value):
+    async def set(self, ctx,
+                  setting: Option(str, "The Setting To Change", choices=choices),
+                  value: Option(str, "The New Value For The Setting")):
         """
         Allows Server Admins To Change The Settings Of The Bot.
-        Usage: `w!set <setting>.<value>`
         """
 
         setting = setting.split(".", 1)
@@ -88,20 +99,20 @@ class GuildSettings(commands.Cog):
                 if setting[1] in SETTINGS[setting[0]]:
                     # setting_type = SETTINGS[setting[0]][setting[1]]['type']
                     # if not exec(f"GuildSettings.is_{setting_type}({ctx}, {value})"):
-                    #     return await ctx.send("That Value Did Not Match The Type Of That Setting")
+                    #     return await ctx.respond("That Value Did Not Match The Type Of That Setting")
                     value = re.sub("[^0-9]", "", ascii(value))
                     await self.bot.db.execute("""
                     INSERT INTO guild_settings (guild_id, setting_name, setting_value)
                     VALUES ($1, $2, $3)
                     ON CONFLICT ON CONSTRAINT guild_settings_pkey DO UPDATE
                     SET setting_value = $4;""", ctx.guild.id, f"{setting[0]}.{setting[1]}", value, value)
-                    await ctx.send(f"Changed The `{setting[0]}.{setting[1]}` Setting To \n`{value}`")
+                    await ctx.respond(f"Changed The `{setting[0]}.{setting[1]}` Setting To \n`{value}`")
                 else:
-                    await ctx.send(f"I Could not Find The `{setting[1]}` Setting In The `{setting[0]}` Group")
+                    await ctx.respond(f"I Could not Find The `{setting[1]}` Setting In The `{setting[0]}` Group")
             except IndexError:
-                await ctx.send("Make Sure To Use `w!set <setting>.<value>` (Without The `<>`)")
+                await ctx.respond("Make Sure To Use `/set <setting>.<value>` (Without The `<>`)")
         else:
-            await ctx.send(f"I could not find the `{setting[0]}` group")
+            await ctx.respond(f"I could not find the `{setting[0]}` group")
 
 
 def setup(client):

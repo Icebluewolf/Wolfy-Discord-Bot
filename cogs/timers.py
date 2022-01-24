@@ -7,7 +7,7 @@ from discord.ext import tasks, commands
 CLOSE_TIMERS_IN_MINUTES = 30
 
 
-class Timers(commands.Cog):
+class Timers(discord.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.look_for_close_times.start()

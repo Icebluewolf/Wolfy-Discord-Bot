@@ -3,6 +3,7 @@ from config import discordClient
 import private
 import global_functions
 from discord.ext import commands
+from discord.commands import slash_command
 
 
 def main_code():
@@ -13,36 +14,35 @@ def main_code():
         await discordClient.change_presence(status=discord.Status.online, activity=discord.Game("In The Snow"))
 
     @commands.is_owner()
-    @commands.command(hidden=True)
+    @slash_command(hidden=True, description="Loads A Cog")
     async def load(ctx, extension):
         discordClient.load_extension(f"cogs.{extension}")
         await ctx.message.add_reaction("\U00002705")
 
     @commands.is_owner()
-    @commands.command(hidden=True)
+    @slash_command(hidden=True, description="Unloads A Cog")
     async def unload(ctx, extension):
         discordClient.unload_extension(f"cogs.{extension}")
         await ctx.message.add_reaction("\U00002705")
 
     @commands.is_owner()
-    @commands.command(hidden=True)
+    @slash_command(hidden=True, description="Reloads A Cog")
     async def reload(ctx, extension):
         discordClient.unload_extension(f"cogs.{extension}")
         discordClient.load_extension(f"cogs.{extension}")
         await ctx.message.add_reaction("\U00002705")
 
-    @discordClient.command()
+    @slash_command()
     async def ping(ctx):
         # Simple Command That Sends The Bots Ping/Latency
         """
         Pings The Bots Server
         """
 
-        await ctx.message.delete()
-        await ctx.send(embed=await global_functions.create_embed(title="",
-                                                                 description=f"Pong :ping_pong:\nPing : "
-                                                                             f"`{discordClient.latency}`"),
-                       delete_after=30)
+        await ctx.respond(embed=await global_functions.create_embed(title="",
+                                                                    description=f"Pong :ping_pong:\nPing : "
+                                                                                f"`{discordClient.latency}`"),
+                          delete_after=30)
 
     class Counter(discord.ui.View):
 
@@ -68,7 +68,7 @@ def main_code():
             super().__init__(placeholder='Choose your favourite colour...', min_values=1, max_values=2, options=options)
 
         async def callback(self, interaction: discord.Interaction):
-            await interaction.response.send_message(f'Your favourite colour is {self.values[0]}')
+            await interaction.response.respond_message(f'Your favourite colour is {self.values[0]}')
 
     class DropdownView(discord.ui.View):
         def __init__(self):
@@ -77,16 +77,10 @@ def main_code():
             # Adds the dropdown to our view object.
             self.add_item(Dropdown())
 
-    @discordClient.command()
-    async def count(ctx: commands.Context):
-        await ctx.send("Press!", view=Counter())
-        await ctx.send("Dropdown!", view=DropdownView())
-
-    @discordClient.command()
-    async def test(ctx):
-        tlist = [1, 2]
-        slist = tlist[4]
-        await ctx.send(slist)
+    @slash_command(description="Lol Fun Interactions Test")
+    async def count(ctx):
+        await ctx.respond("Press!", view=Counter())
+        await ctx.respond("Dropdown!", view=DropdownView())
 
     @discordClient.event
     async def on_guild_join(guild, bot_instance):
@@ -94,9 +88,9 @@ def main_code():
         bot = guild.me
         for channel in guild.text_channels:
             bot_perms = bot.permissions_in(channel)
-            if bot_perms.send_messages:
-                await channel.send(f"Thanks for inviting me members of {guild}. "
-                                   f"To get started an admin can run w!settings")
+            if bot_perms.respond_messages:
+                await channel.respond(f"Thanks for inviting me members of {guild}. "
+                                   f"To get started an admin can run /settings")
                 break
         #
         # # Add Row In guild_settings
@@ -106,22 +100,23 @@ def main_code():
         # bot_instance.db.execute(sql, (guild.id, guild.id))
 
     @discordClient.event
-    async def on_member_join(member, bot):
+    async def on_member_join(member):
         # Sets Up The Users Database User Info When A User Join A Server
         sql = "SELECT * FROM user_data WHERE discord_user_id=$1 AND guild_id=$2"
-        row = bot.db.fetch(sql, member.id, member.guild.id)
+        row = discordClient.db.fetch(sql, member.id, member.guild.id)
         if row:
             return
         else:
-            await global_functions.add_user_db_row(member, bot)
+            await global_functions.add_user_db_row(member, discordClient)
 
     # Run The Bot And Load Cogs
-    cogs = ["cogs.guild_settings", "cogs.timers", "cogs.reaction_roles", "cogs.poll", "cogs.moderation",
+    cogs = ["cogs.guild_settings", "cogs.timers", "cogs.reaction_roles", "cogs.moderation",
             "cogs.error_handler"]
     for cog in cogs:
         discordClient.load_extension(cog)
 
-    discordClient.load_extension('jishaku')
+    # JSK does not yet support app commands
+    # discordClient.load_extension('jishaku')
     discordClient.run(private.clientSecret)
 
 

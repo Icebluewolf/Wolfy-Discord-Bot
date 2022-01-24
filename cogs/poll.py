@@ -1,3 +1,7 @@
+##################################
+# Disabled Needs To Be Re-writen #
+##################################
+
 import discord
 import datetime
 import asyncio
@@ -5,6 +9,7 @@ import re
 import global_functions
 import custom_checks
 from discord.ext import commands
+from discord.commands import slash_command
 
 client = discord.Client()
 
@@ -19,15 +24,14 @@ minutes = 0
 timeSeconds = 0
 
 
-class Poll(commands.Cog):
+class Poll(discord.Cog):
 
-    @commands.command()
+    @slash_command()
     @custom_checks.has_perms("poll")
     async def poll(self, ctx, *, content):
         """
         Makes A Poll That Users Can Vote On.
         """
-        await ctx.message.delete()
         global seconds
         msg = content.split(",")
         for field in msg:
@@ -62,7 +66,7 @@ class Poll(commands.Cog):
                         timeSeconds = 0
 
         except:
-            await ctx.channel.send(embed=await global_functions.create_embed(title="error",
+            await ctx.channel.respond(embed=await global_functions.create_embed(title="error",
                                                                              description=
                                                                              "Please Enter A Time In Numbers In The 3rd Position\n"
                                                                              "Ex: 3d12h30m30s  Meaning 3 Days 12 Hours 30 Minutes And 30 Seconds"))
@@ -82,14 +86,14 @@ class Poll(commands.Cog):
         del msg[0]
         del msg[0]
         if len(msg) > 20 or len(msg) < 1:
-            await ctx.channel.send(embed=await global_functions.create_embed(title="error",
+            await ctx.channel.respond(embed=await global_functions.create_embed(title="error",
                                                                              description="You Must Have 1-20 Options"))
             return
         for i in msg:
             options = options + emojis[count] + "    " + i + "\n"
             count += 1
         embed.add_field(name="Options", value=options, inline=False)
-        ctx = await ctx.channel.send(embed=embed)
+        ctx = await ctx.channel.respond(embed=embed)
         for i in range(len(msg)):
             await ctx.add_reaction(emojis[i])
         messageId = ctx.id
@@ -115,18 +119,17 @@ class Poll(commands.Cog):
             resultmessage = "There was a tie between"
             for i in range(len(winner)):
                 resultmessage = resultmessage + " - " + str(winner[i])
-            await ctx.channel.send(embed=await global_functions.create_embed(title="",
+            await ctx.channel.respond(embed=await global_functions.create_embed(title="",
                                                                              description=resultmessage))
         else:
-            await ctx.channel.send(embed=await global_functions.create_embed(title="",
+            await ctx.channel.respond(embed=await global_functions.create_embed(title="",
                                                                              description=
                                                                              "The wining choice was " + str(winner[0])))
 
     @poll.error
     async def whitelist_error(self, ctx, error):
-        await ctx.message.delete()
         if isinstance(error, commands.CheckFailure):
-            await ctx.send(embed=await global_functions.create_embed(title="fail",
+            await ctx.respond(embed=await global_functions.create_embed(title="fail",
                                                                      description=
                                                                      "You Do Not Have Permission To Preform That Command"))
 

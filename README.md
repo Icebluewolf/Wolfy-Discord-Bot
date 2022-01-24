@@ -18,7 +18,7 @@ I Am Now Trying To Allow The Public To Use This Bot.
 This is a Discord Bot That Has Been Created To Help Me Learn Python.
 The Bot Uses Python 3.7 Along With Discord.py.
 
-The prefix for all commands on this bot is : `w!`
+The prefix for all commands on this bot is : `/`
 
 You Can Invite The Bot To Your Server With The Link Below **OR** You Can Use This Code As A Starting Template.<br>
 Invite : [Invite The Bot To Your Server](https://discord.com/api/oauth2/authorize?client_id=714954765368295486&permissions=126016&scope=bot)
@@ -45,8 +45,8 @@ List All Of A Users Punishments.
 ## Polls
 This Feature Is For Getting The Input Of Others.<br>
 You Can Type In A Command And Wolfy Will Make A Custom Embed/Message For Your Poll.
-An Example Command For This Is : `w!poll Title, 1d12h, Option 1, Option 2, Etc.`
-w!poll Is The Activation For The Command. The Title is The Title Of Your Poll.
+An Example Command For This Is : `/poll Title, 1d12h, Option 1, Option 2, Etc.`
+/poll Is The Activation For The Command. The Title is The Title Of Your Poll.
 The Time Is A Group Of Characters, You Can Use d For Days, h For Hours, m For Minutes, And s for Seconds. 
 You Must Do Them In Order (dhms) But, Are Not Required To Use All Fields. If A Field Is Unused It Will Be Set To Zero. 
 There Is A Limit Of 20 Options In The Poll Because Of Discords Limit Of 20 Reactions Per Message.
@@ -57,8 +57,8 @@ This will help your server not rely on staff to give out roles.
 This can be used to set up an announcement role that users can opt in for, so you dont have to ping @everyone. 
 If you want to know what games your users are interested in put up a few reactions roles with the top games.
 When users click the reaction they will get the specified role. When the remove the reaction there role will be removed!
-The format for this command is `w!rr <add|remove> <emoji> <message_id> <role_id> [channel_id, for add only]`.
-You can also list your servers reaction roles with `w!rr list` and if you need help with copying IDs run `w!rr id`
+The format for this command is `/rr <add|remove> <emoji> <message_id> <role_id> [channel_id, for add only]`.
+You can also list your servers reaction roles with `/rr list` and if you need help with copying IDs run `w!rr id`
 
 
 ## Whitelisting 
@@ -67,7 +67,7 @@ This command will make it easy for you to allow users that are on your discord t
 Minecraft server. As this bot was designed on a discord for a small Minecraft server I thought it would be a 
 good idea to add automatic whitelisting. This feature is not available to be used *yet.*
 I am current working on a new feature(Custom Settings) that will allow this.
-The command for this feature is `w!whitelist IGN` With IGN being the players Minecraft Username they want to whitelist
+The command for this feature is `/whitelist IGN` With IGN being the players Minecraft Username they want to whitelist
 
 
 
@@ -76,8 +76,8 @@ Are you tired of people using a command you dont want them to use.
 This feature will allow you to lock a command to only be accessed by specific roles. 
 It will also allow you to set up items such as connection to your Minecraft server.
 This command comes with 2 options on how to run it. If you are to the command you 
-can run `w!settings` to get a step by step walkthrough of the command. 
-If you know exactly what you want to do you can run `w!settings <feature> <setting>` 
+can run `/settings` to get a step by step walkthrough of the command. 
+If you know exactly what you want to do you can run `/settings <feature> <setting>` 
 where feature is what you want to change as a category `EX: poll` and setting is the 
 specific thing within the feature you want to change `EX: roles`.
 

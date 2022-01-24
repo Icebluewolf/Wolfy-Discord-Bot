@@ -1,5 +1,5 @@
 SETTINGS = {
-    "description": "These Are All The Setting Groups Use `w!settings <group>` To See More Info About A Group",
+    "description": "These Are All The Setting Groups Use `/settings <group>` To See More Info About A Group",
 
     "bypass": {
         "description": "These Settings Will Give The Same Permissions As If The Activation Was Done By A Admin",

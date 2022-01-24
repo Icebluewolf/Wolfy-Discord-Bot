@@ -4,12 +4,12 @@ from config import discordClient
 from discord.ext import commands
 
 
-class CommandErrorHandler(commands.Cog):
+class CommandErrorHandler(discord.Cog):
 
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.Cog.listener()
+    @discord.Cog.listener()
     async def on_command_error(self, ctx, error):
         # This prevents any commands with local handlers being handled here in on_command_error.
         if hasattr(ctx.command, 'on_error'):
@@ -32,11 +32,11 @@ class CommandErrorHandler(commands.Cog):
             return
 
         if isinstance(error, commands.DisabledCommand):
-            await ctx.send(f'{ctx.command} has been disabled.')
+            await ctx.respond(f'{ctx.command} has been disabled.')
 
         elif isinstance(error, commands.NoPrivateMessage):
             try:
-                await ctx.author.send(f'{ctx.command} can not be used in Private Messages.')
+                await ctx.author.respond(f'{ctx.command} can not be used in Private Messages.')
             except discord.HTTPException:
                 pass
 
@@ -44,7 +44,7 @@ class CommandErrorHandler(commands.Cog):
             # Send To Bug Report Channel If Main Bot
             if discordClient.user.id == 714954765368295486:
                 # All other Errors not returned come here
-                await ctx.send(f"""There Was An Error. Join The Support Server For Help: https://discord.gg/f39cJ9D""")
+                await ctx.respond(f"There Was An Error. Join The Support Server For Help: https://discord.gg/f39cJ9D")
                 # For Reporting Bugs To The Support Server, By Sending The Traceback
                 channel = discordClient.get_channel(933351512665632820)
                 if channel is None:
@@ -56,7 +56,7 @@ class CommandErrorHandler(commands.Cog):
             # Send To User If Test Bot
             else:
                 # All other Errors not returned come here. And we can just print the default TraceBack.
-                await ctx.send(f"""Error: \n```
+                await ctx.respond(f"""Error: \n```
                                {"".join(traceback.format_exception(type(error), error, error.__traceback__))}```""")
 
 
@@ -69,4 +69,4 @@ def setup(client):
 #         self.embed = discord.Embed(title="Error - InvalidRoleSetting",
 #                                    description=f"The `{setting}` is either empty or does not contain a valid role ID",
 #                                    color=discord.Colour.red)
-#         await ctx.send(embed=self.embed)
+#         await ctx.respond(embed=self.embed)

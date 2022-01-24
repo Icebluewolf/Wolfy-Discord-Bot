@@ -1,7 +1,10 @@
+from abc import ABC
+
 import discord
 import private
 import asyncpg
 import asyncio
+from cogs.help import CustomHelp
 from discord.ext import commands, tasks
 
 # Enable Intents
@@ -58,7 +61,7 @@ class Database:
     #         return []
 
 
-class WolfyBot(commands.Bot):
+class WolfyBot(discord.Bot, ABC):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -66,10 +69,12 @@ class WolfyBot(commands.Bot):
 
 
 # Set Discord Client (aka "bot")
-discordClient = WolfyBot(command_prefix="w!", intents=intents)
+discordClient = WolfyBot(command_prefix="w!",
+                         intents=intents,
+                         help_command=CustomHelp())
 
 
-class DBKeepAlive(commands.Cog):
+class DBKeepAlive(discord.Cog):
     def __init__(self, bot):
         self.bot = bot
         # start keep alive
