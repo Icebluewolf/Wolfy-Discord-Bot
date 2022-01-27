@@ -36,10 +36,10 @@ def main_code():
     @slash_command(name="sql", guilds=[678359965081141286, 649607502756839424])
     async def sql_test(ctx, query: str):
         rsps = await ctx.bot.db.fetch(query)
-        await ctx.send(rsps)
-        await ctx.send(rsps[0])
-        await ctx.send(rsps[0]["setting_value"])
-        await ctx.send(rsps["setting_value"])
+        print("rsps", rsps)
+        await ctx.send(str(rsps))
+        await ctx.send(str(rsps[0]))
+        await ctx.send(str(rsps[0]["setting_value"]))
 
     @slash_command()
     async def ping(ctx):
