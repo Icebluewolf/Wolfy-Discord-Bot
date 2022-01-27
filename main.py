@@ -33,10 +33,13 @@ def main_code():
         await ctx.message.add_reaction("\U00002705")
 
     @commands.is_owner()
-    @slash_command(name="sql")
+    @slash_command(name="sql", guilds=[678359965081141286, 649607502756839424])
     async def sql_test(ctx, query: str):
         rsps = await ctx.bot.db.fetch(query)
-        await ctx.respond(str(rsps) + "\n\n" + str(rsps[0]) + "\n\n" + str(rsps[0]["setting_value"]))
+        await ctx.send(rsps)
+        await ctx.send(rsps[0])
+        await ctx.send(rsps[0]["setting_value"])
+        await ctx.send(rsps["setting_value"])
 
     @slash_command()
     async def ping(ctx):
