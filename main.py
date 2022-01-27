@@ -32,6 +32,12 @@ def main_code():
         discordClient.load_extension(f"cogs.{extension}")
         await ctx.message.add_reaction("\U00002705")
 
+    @commands.is_owner()
+    @slash_command(name="sql")
+    async def sql_test(ctx, query: str):
+        rsps = await ctx.bot.db.fetch(query)
+        await ctx.respond(str(rsps) + "\n\n" + str(rsps[0]) + "\n\n" + str(rsps[0]["setting_value"]))
+
     @slash_command()
     async def ping(ctx):
         # Simple Command That Sends The Bots Ping/Latency
@@ -114,6 +120,11 @@ def main_code():
             "cogs.error_handler"]
     for cog in cogs:
         discordClient.load_extension(cog)
+
+    # Load Other Non-Cog Commands
+    cmds = [load, unload, reload, ping, count, sql_test]
+    for cmd in cmds:
+        discordClient.add_application_command(cmd)
 
     # JSK does not yet support app commands
     # discordClient.load_extension('jishaku')
