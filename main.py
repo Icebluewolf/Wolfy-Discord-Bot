@@ -32,15 +32,6 @@ def main_code():
         discordClient.load_extension(f"cogs.{extension}")
         await ctx.message.add_reaction("\U00002705")
 
-    @commands.is_owner()
-    @slash_command(name="sql", guilds=[678359965081141286, 649607502756839424])
-    async def sql_test(ctx, query: str):
-        rsps = await ctx.bot.db.fetch(query)
-        print("rsps", rsps)
-        await ctx.send(str(rsps))
-        await ctx.send(str(rsps[0]))
-        await ctx.send(str(rsps[0]["setting_value"]))
-
     @slash_command()
     async def ping(ctx):
         # Simple Command That Sends The Bots Ping/Latency
@@ -119,13 +110,12 @@ def main_code():
             await global_functions.add_user_db_row(member, discordClient)
 
     # Run The Bot And Load Cogs
-    cogs = ["cogs.guild_settings", "cogs.timers", "cogs.reaction_roles", "cogs.moderation",
-            "cogs.error_handler"]
+    cogs = ["cogs.error_handler", "cogs.guild_settings", "cogs.timers", "cogs.reaction_roles", "cogs.moderation"]
     for cog in cogs:
         discordClient.load_extension(cog)
 
     # Load Other Non-Cog Commands
-    cmds = [load, unload, reload, ping, count, sql_test]
+    cmds = [load, unload, reload, ping, count]
     for cmd in cmds:
         discordClient.add_application_command(cmd)
 

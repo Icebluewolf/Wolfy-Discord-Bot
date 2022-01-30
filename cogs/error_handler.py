@@ -2,6 +2,7 @@ import traceback
 import discord
 from config import discordClient
 from discord.ext import commands
+from .utility.custom_errors import MissingSetting
 
 
 class CommandErrorHandler(discord.Cog):
@@ -39,6 +40,12 @@ class CommandErrorHandler(discord.Cog):
                 await ctx.author.respond(f'{ctx.command} can not be used in Private Messages.')
             except discord.HTTPException:
                 pass
+
+        elif isinstance(error, commands.MissingPermissions):
+            await ctx.respond(error)
+
+        elif isinstance(error, MissingSetting):
+            await ctx.respond(error)
 
         else:
             # Send To Bug Report Channel If Main Bot

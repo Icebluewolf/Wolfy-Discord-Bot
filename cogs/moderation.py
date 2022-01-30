@@ -1,5 +1,6 @@
 import custom_checks
 import discord
+from .utility.custom_errors import MissingSetting
 from datetime import datetime
 from discord.ext import commands
 from config import discordClient
@@ -11,21 +12,25 @@ class Moderation(discord.Cog):
         self.bot = bot
 
     async def log_action(self, guild_id, title, reason, infraction_id):
-        if infraction_id:
-            description = f"Reason: {reason or f'No Reason Provided. Use `/reason {infraction_id}` To Add One'}\n"
-            f"Log ID: {infraction_id}"
-        else:
-            description = reason
-        embed = discord.Embed(title=title,
-                              description=description,
-                              timestamp=datetime.utcnow())
+
         c_id = await self.bot.db.fetchval("""
         SELECT setting_value FROM guild_settings WHERE guild_id = $1 AND setting_name = $2;
         """, guild_id, "staff.log_channel")
-        channel = self.bot.get_channel(c_id)
-        if channel is None:
-            channel = await self.bot.fetch_channel(c_id)
-        await channel.send(embed=embed)
+        if c_id:
+            if infraction_id:
+                description = f"Reason: {reason or f'No Reason Provided. Use `/reason {infraction_id}` To Add One'}\n"
+                f"Log ID: {infraction_id}"
+            else:
+                description = reason
+            embed = discord.Embed(title=title,
+                                  description=description,
+                                  timestamp=datetime.utcnow())
+            channel = self.bot.get_channel(c_id)
+            if channel is None:
+                channel = await self.bot.fetch_channel(c_id)
+            await channel.send(embed=embed)
+        else:
+            raise MissingSetting("staff.log_channel")
 
     async def db_infraction(self, user_id, prosecutor_id, guild_id, infraction_type, reason=None):
         sql = """INSERT INTO infractions ("userID", "prosecutorID", "guildID", type, reason, datetime) 
@@ -37,7 +42,7 @@ class Moderation(discord.Cog):
 
     @slash_command(description="Ban A Member")
     @commands.guild_only()
-    @custom_checks.has_perms("ban")
+    @commands.has_permissions(ban_members=True)
     async def ban(self, ctx, member: Option(discord.Member, description="The Member To Ban"),
                   reason: Option(str, description="The Reason To Ban The Member", required=False)):
         await ctx.guild.ban(member, reason=reason, delete_message_days=0)
@@ -58,20 +63,24 @@ class Moderation(discord.Cog):
         await ctx.defer()
         sql = "SELECT setting_value FROM guild_settings WHERE guild_id = $1 AND setting_name = $2"
         rows = await self.bot.db.fetch(sql, ctx.guild.id, "staff.mute_role_id")
-        role = ctx.guild.get_role(int(rows[0]["setting_value"]))
-        # if role is None:
-        #     raise commands.InvalidRoleSetting(ctx, "staff.role")
-        await member.add_roles(role, reason="Staff Request Via Mute Command")
-        infraction_id = await self.db_infraction(member.id, ctx.author.id, ctx.guild.id, "mute", reason)
-        await self.log_action(ctx.guild.id,
-                              title=f"{ctx.author.name}({ctx.author.id}) Muted {member.name}({member.id})",
-                              reason=reason, infraction_id=infraction_id)
-        if time:
-            timers = self.bot.get_cog("Timers")
-            time = await timers.format_time(time)
+        if rows:
+            role = ctx.guild.get_role(int(rows[0]["setting_value"]))
+            # if role is None:
+            #     raise commands.InvalidRoleSetting(ctx, "staff.role")
+            await member.add_roles(role, reason="Staff Request Via Mute Command")
+            infraction_id = await self.db_infraction(member.id, ctx.author.id, ctx.guild.id, "mute", reason)
+            await self.log_action(ctx.guild.id,
+                                  title=f"{ctx.author.name}({ctx.author.id}) Muted {member.name}({member.id})",
+                                  reason=reason, infraction_id=infraction_id)
             if time:
-                await timers.create_timer(time, 1, member.id, ctx.guild.id)
-        await ctx.respond(f"Successfully Muted {member.name}({member.id})")
+                timers = self.bot.get_cog("Timers")
+                time = await timers.format_time(time)
+                if time:
+                    await timers.create_timer(time, 1, member.id, ctx.guild.id)
+            await ctx.respond(f"Successfully Muted {member.name}({member.id})")
+        else:
+            raise MissingSetting("staff.mute_role_id", "You Are Missing The %s Setting. Set An ID Or Run /mod "
+                                                       "mutesetup")
 
     @commands.guild_only()
     @slash_command(description="Unmutes A User If They Are Muted For A Time Or Indefinitely")
@@ -82,15 +91,19 @@ class Moderation(discord.Cog):
         if member:
             sql = "SELECT setting_value FROM guild_settings WHERE guild_id = $1 AND setting_name = $2"
             role = await self.bot.db.fetch(sql, ctx.guild.id, "staff.mute_role_id")
-            role = ctx.guild.get_role(int(role[0]["setting_value"]))
-            try:
-                await member.remove_roles(role, reason=f"Unmuted By {ctx.author.name}")
-                await self.log_action(ctx.guild.id, title=f"{member.name}({member.id}) Was Unmuted",
-                                      reason=reason or f"Manually Unmuted By {ctx.author.name}",
-                                      infraction_id=None)
-            except discord.Forbidden:
-                pass
-        await ctx.respond(f"Successfully Unmuted {member.name}({member.id})")
+            if role:
+                role = ctx.guild.get_role(int(role[0]["setting_value"]))
+                try:
+                    await member.remove_roles(role, reason=f"Unmuted By {ctx.author.name}")
+                    await self.log_action(ctx.guild.id, title=f"{member.name}({member.id}) Was Unmuted",
+                                          reason=reason or f"Manually Unmuted By {ctx.author.name}",
+                                          infraction_id=None)
+                    await ctx.respond(f"Successfully Unmuted {member.name}({member.id})")
+                except discord.Forbidden:
+                    pass
+            else:
+                raise MissingSetting("staff.mute_role_id", "You Are Missing The %s Setting. Set An ID Or Run /mod "
+                                                           "mutesetup")
 
     @discord.Cog.listener()
     async def on_tempmute_timer_complete(self, timer):
@@ -100,14 +113,20 @@ class Moderation(discord.Cog):
             if member is not None:
                 sql = "SELECT setting_value FROM guild_settings WHERE guild_id = $1 AND setting_name = $2;"
                 role = await self.bot.db.fetch(sql, guild.id, "staff.mute_role_id")
-                role = guild.get_role(int(role[0]["setting_value"]))
-                try:
-                    await member.remove_roles(role, reason="Temp-Mute Ended")
-                    await self.log_action(timer[5], title=f"{member.name}({member.id}) Was Unmuted",
-                                          reason="Automatically Unmuted After Tempmute Completed",
+                if role:
+                    role = guild.get_role(int(role[0]["setting_value"]))
+                    try:
+                        await member.remove_roles(role, reason="Temp-Mute Ended")
+                        await self.log_action(timer[5], title=f"{member.name}({member.id}) Was Unmuted",
+                                              reason="Automatically Unmuted After Tempmute Completed",
+                                              infraction_id=None)
+                    except discord.Forbidden:
+                        pass
+                else:
+                    await self.log_action(timer[5], title=f"{member.name}({member.id}) Was __Not__ Unmuted",
+                                          reason="You Are Missing The staff.mute_role_id Setting. Set An ID Or Run /mod"
+                                                 " mutesetup",
                                           infraction_id=None)
-                except discord.Forbidden:
-                    pass
 
     @slash_command(description="Kick A Member From The Guild, Will Not Prevent Rejoining")
     @commands.guild_only()
