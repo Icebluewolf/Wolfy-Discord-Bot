@@ -54,8 +54,7 @@ class Moderation(discord.Cog):
         await ctx.respond(f"Successfully Banned {member.name}({member.id})")
 
     @slash_command(description="Timeout A Member So That They Cannot Interact With The Server But Can Still Read "
-                               "Messages",
-                   guild_ids=[678359965081141286])
+                               "Messages")
     @commands.guild_only()
     @custom_checks.has_perms("staff")
     async def mute(self, ctx, member: Option(discord.Member, description="The Member To Mute"),
@@ -81,8 +80,7 @@ class Moderation(discord.Cog):
                           f"{int(time.mktime(timeout_end.timetuple()))}:R>")
 
     @commands.guild_only()
-    @slash_command(description="Removes A Member From Timeout",
-                   guild_ids=[678359965081141286])
+    @slash_command(description="Removes A Member From Timeout")
     @custom_checks.has_perms("staff")
     async def unmute(self, ctx,
                      member: Option(discord.Member, description="The Member To Remove From Timeout"),
