@@ -1,7 +1,8 @@
 import custom_checks
 import discord
 from .utility.custom_errors import MissingSetting
-from datetime import datetime
+from datetime import timedelta, datetime
+import time
 from discord.ext import commands
 from config import discordClient
 from discord.commands import slash_command, SlashCommandGroup, Option
@@ -52,58 +53,44 @@ class Moderation(discord.Cog):
                               reason=reason, infraction_id=infraction_id)
         await ctx.respond(f"Successfully Banned {member.name}({member.id})")
 
-    @slash_command(description="Prevent A Member From Speaking For A Time Or Indefinitely")
+    @slash_command(description="Timeout A Member So That They Cannot Interact With The Server But Can Still Read "
+                               "Messages",
+                   guild_ids=[678359965081141286])
     @commands.guild_only()
     @custom_checks.has_perms("staff")
     async def mute(self, ctx, member: Option(discord.Member, description="The Member To Mute"),
-                   time: Option(str, description="The Length Of Time In The Format DaysHoursMinutesSeconds ("
-                                                 "3d12h30m) Default Is \"Until Unmuted\"",
-                                required=False),
+                   days: Option(int, description="The Amount Of Days The User Should Be Muted.", required=False,
+                                default=0, min_value=0, max_value=27),
+                   hours: Option(int, description="The Amount Of Hours The User Should Be Muted.", required=False,
+                                default=0, min_value=0, max_value=23),
+                   minutes: Option(int, description="The Amount Of Minutes The User Should Be Muted.", required=False,
+                                default=0, min_value=0, max_value=59),
                    reason: Option(str, description="The Reason To Mute The Member", required=False)):
-        await ctx.defer()
-        sql = "SELECT setting_value FROM guild_settings WHERE guild_id = $1 AND setting_name = $2"
-        rows = await self.bot.db.fetch(sql, ctx.guild.id, "staff.mute_role_id")
-        if rows:
-            role = ctx.guild.get_role(int(rows[0]["setting_value"]))
-            # if role is None:
-            #     raise commands.InvalidRoleSetting(ctx, "staff.role")
-            await member.add_roles(role, reason="Staff Request Via Mute Command")
-            infraction_id = await self.db_infraction(member.id, ctx.author.id, ctx.guild.id, "mute", reason)
-            await self.log_action(ctx.guild.id,
-                                  title=f"{ctx.author.name}({ctx.author.id}) Muted {member.name}({member.id})",
-                                  reason=reason, infraction_id=infraction_id)
-            if time:
-                timers = self.bot.get_cog("Timers")
-                time = await timers.format_time(time)
-                if time:
-                    await timers.create_timer(time, 1, member.id, ctx.guild.id)
-            await ctx.respond(f"Successfully Muted {member.name}({member.id})")
-        else:
-            raise MissingSetting("staff.mute_role_id", "You Are Missing The %s Setting. Set An ID Or Run /mod "
-                                                       "mutesetup")
+        duration = timedelta(days=days, hours=hours, minutes=minutes)
+        await member.timeout_for(duration, reason=reason)
+        timeout_end = datetime.now() + duration
+
+        infraction_id = await self.db_infraction(member.id, ctx.author.id, ctx.guild.id, "mute", reason)
+        await self.log_action(ctx.guild.id,
+                              title=f"{ctx.author.name}({ctx.author.id}) Muted {member.name}({member.id})",
+                              reason=reason + f"\nThey Will Be Automatically Removed From Timeout In "
+                                              f"<t:{int(time.mktime(timeout_end.timetuple()))}:R>",
+                              infraction_id=infraction_id)
+
+        await ctx.respond(f"Member Timed Out. They Will Be Automatically Removed From Timeout In <t:"
+                          f"{int(time.mktime(timeout_end.timetuple()))}:R>")
 
     @commands.guild_only()
-    @slash_command(description="Unmutes A User If They Are Muted For A Time Or Indefinitely")
+    @slash_command(description="Removes A Member From Timeout",
+                   guild_ids=[678359965081141286])
     @custom_checks.has_perms("staff")
     async def unmute(self, ctx,
-                     member: Option(discord.Member, description="The Member To Unmute"),
-                     reason: Option(str, description="The Reason To Unmute The Member", required=False)):
-        if member:
-            sql = "SELECT setting_value FROM guild_settings WHERE guild_id = $1 AND setting_name = $2"
-            role = await self.bot.db.fetch(sql, ctx.guild.id, "staff.mute_role_id")
-            if role:
-                role = ctx.guild.get_role(int(role[0]["setting_value"]))
-                try:
-                    await member.remove_roles(role, reason=f"Unmuted By {ctx.author.name}")
-                    await self.log_action(ctx.guild.id, title=f"{member.name}({member.id}) Was Unmuted",
-                                          reason=reason or f"Manually Unmuted By {ctx.author.name}",
-                                          infraction_id=None)
-                    await ctx.respond(f"Successfully Unmuted {member.name}({member.id})")
-                except discord.Forbidden:
-                    pass
-            else:
-                raise MissingSetting("staff.mute_role_id", "You Are Missing The %s Setting. Set An ID Or Run /mod "
-                                                           "mutesetup")
+                     member: Option(discord.Member, description="The Member To Remove From Timeout"),
+                     reason: Option(str, description="The Reason To Remove The Member From Timeout", required=False)):
+        await member.remove_timeout(reason=reason)
+        await self.log_action(ctx.guild.id, title=f"{member.name}({member.id}) Was Removed From Timeout By "
+                                                  f"{ctx.author.name}", reason=reason, infraction_id=None)
+        await ctx.respond(f"Successfully Unmuted {member.name}({member.id})")
 
     @discord.Cog.listener()
     async def on_tempmute_timer_complete(self, timer):
